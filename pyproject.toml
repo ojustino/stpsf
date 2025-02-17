@@ -56,11 +56,14 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "*" = [
-    "*.fits, *.csv",
+    "*.fits", "*.csv", "scripts/"
 ]
 "stpsf.tests" = [
     "data/*",
 ]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["docs/_build/","build/"]
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
