@@ -35,6 +35,12 @@ Releasing new data packages
     #. This will change the name of ``minimal-stpsf-data-LATEST.tar.gz`` to be what you just uploaded, rename the file back to ``minimal-stpsf-data-LATEST.tar.gz``
     #. Upload to Box a separate version of ``minimal-stpsf-data-#.#.#.tar.gz`` shared data folder for future storage.
     #. Verify the shared link of ``stpsf-data-latest.tar.gz`` is the same that exists in ``docs/installation.rst`` ("copy shared link" then "link settings")
+#. IF STILL SUPPORTING WEBBPSF do this step for both ``stpsf-data-#.#.#.tar.gz`` and ``minimal-stpsf-data-#.#.#.tar.gz``
+    #. Locally extract the ``tar.gz``
+    #. Rename ``/stpsf-data/`` to ``/webbpsf-data/``
+    #. Compress the ``/webbpsf-data/`` folder - ``TAR -cvz -f minimal-webbpsf-data-#.#.#.tar.gz webbpsf-data``
+    #. Follow the previous step for uploading this to box using the WEBBPSF naming convention.
+    #. If WebbPSF is no longer supported and has been sunset, delete this entire step.
 #. A shared copy will be automatically configured in STScI Central Store with updated symlink ``/grp/stpsf/stpsf-data``
 #. Verify code base is still up to date with box links and version names (they should be)
     #. Verify ``installation.rst`` with link to box data (this shouldn't need to change the box link, but verify it hasn't changed)
