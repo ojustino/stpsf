@@ -30,7 +30,7 @@ See `Using STPSF <usage.html>`_.
 
 .. admonition:: Quickstart Jupyter Notebook
 
-   This documentation is complemented by an `Jupyter Notebook format quickstart tutorial <http://nbviewer.jupyter.org/github/spacetelescope/stpsf/blob/stable/notebooks/STPSF_tutorial.ipynb>`_. Downloading and running that notebook is a great way to get started using STPSF.
+   This documentation is complemented by a `Jupyter Notebook format quickstart tutorial <http://nbviewer.jupyter.org/github/spacetelescope/stpsf/blob/develop/notebooks/STPSF_tutorial.ipynb>`_. Downloading and running that notebook is a great way to get started using STPSF.
 
 
 .. admonition:: Getting Help
