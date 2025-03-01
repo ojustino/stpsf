@@ -216,11 +216,11 @@ def _load_wfi_detector_aberrations(filename):
 
     def build_detector_from_table(number, zernike_table):
         """Build a FieldDependentAberration optic for a detector using
-        Zernikes Z1-Z22 at various wavelengths and field points"""
+        Zernikes Z1-Z43 at various wavelengths and field points"""
         single_detector_info = zernike_table[zernike_table['sca'] == number]
         field_points = set(single_detector_info['field_point'])
         detector = FieldDependentAberration(
-            4096, 4096, radius=RomanInstrument.PUPIL_RADIUS, name='Field Dependent Aberration (SCA{:02})'.format(number)
+            4096, 4096, radius=RomanInstrument.PUPIL_RADIUS, name=f"Field Dependent Aberration (WFI{number:02d})"
         )
         for field_id in field_points:
             field_point_rows = single_detector_info[single_detector_info['field_point'] == field_id]
@@ -251,7 +251,7 @@ def _load_wfi_detector_aberrations(filename):
 
     detector_ids = set(zernike_table['sca'])
     for detid in detector_ids:
-        detectors['SCA{:02}'.format(detid)] = build_detector_from_table(detid, zernike_table)
+        detectors['WFI{:02}'.format(detid)] = build_detector_from_table(detid, zernike_table)
 
     return detectors
 
@@ -438,14 +438,18 @@ class WFIPupilController:
     detector and filter values selected by the user in the WFI class.
     The user should not interact with this class directly, only
     through the API provided through the WFI class.
+
+    Parameters
+    ----------
+    datapath : string
+        Path to STPSF-WFI data files
     """
 
-    def __init__(self):
-        self._datapath = None
-        self._pupil_basepath = None
+    def __init__(self, datapath):
+        self.set_base_path(datapath)
 
         self._pupil = None
-        self._pupil_mask = None  # new for stpsf 1.0
+        self._pupil_mask = None
 
         # Flag to en-/disable automatic selection of the appropriate pupil_mask
         self._auto_pupil = True
@@ -485,7 +489,8 @@ class WFIPupilController:
 
     @pupil_mask.setter
     def pupil_mask(self, name):
-        raise AttributeError('Pupil mask cannot be directly specified. ' 'Use lock_pupil_mask() instead.')
+        raise AttributeError('Pupil mask cannot be directly specified. '
+                             'Use lock_pupil_mask() instead.')
 
     def _get_filter_mask(self, wfi_filter):
         """
@@ -509,6 +514,8 @@ class WFIPupilController:
             # so we assume all inputs are valid and direct those that don't pass
             # preceding cases to skinny
             return 'SKINNY'
+
+        return wfi_filter
 
     def set_base_path(self, datapath):
         """
@@ -538,13 +545,14 @@ class WFIPupilController:
             See WFI.detector_list for a list of valid detectors.
         """
         if not self._auto_pupil:
-            _log.info('Automatic pupil selection was locked; ' 'using user-provided pupil.')
+            _log.info('Automatic pupil selection was locked; '
+                      'using user-provided pupil.')
             return
 
         if self._pupil_basepath is None:
             raise Exception('update_pupil called before setting pupil file path')
 
-        # change detector string to match file format (e.g., "SCA01" -> "SCA_1")
+        # change detector string to match file format (e.g., "WFI01" -> "WFI_1")
         det_substr = f'{detector[:3]}_{str(int((detector[3:])))}'
 
         # figure out proper mask based on filter (or use locked mask if enabled)
@@ -557,7 +565,8 @@ class WFIPupilController:
         self._pupil = pupil
 
         _log.info(
-            f"Using {'' if self._auto_pupil_mask else 'locked '}" f"pupil mask '{pupil_mask}' and detector '{detector}'."
+            f"Using {'' if self._auto_pupil_mask else 'locked '}"
+            f"pupil mask '{pupil_mask}' and detector '{detector}'."
         )
 
     def lock_pupil(self, pupil_path):
@@ -633,7 +642,7 @@ class WFI(RomanInstrument):
         # https://roman.ipac.caltech.edu/sims/Param_db.html
         pixelscale = 110e-3  # arcsec/px
 
-        # Initialize the aberrations for super().__init__
+        # Initialize the aberrations for parent SpaceTelescopeInstrument class
         self._aberration_files = {}
         self._is_custom_aberration = False
         self._current_aberration_file = ''
@@ -641,8 +650,7 @@ class WFI(RomanInstrument):
         super().__init__('WFI', pixelscale=pixelscale)
 
         # Initialize the pupil controller
-        self._pupil_controller = WFIPupilController()
-        self._pupil_controller.set_base_path(self._datapath)
+        self._pupil_controller = WFIPupilController(self._datapath)
 
         self.pupil_mask_list = list(self._pupil_controller.pupil_file_formatters.keys())
 
@@ -657,7 +665,7 @@ class WFI(RomanInstrument):
         # Load and set default detector from aberration file
         self._detector_npixels = 4096
         self._load_detector_aberrations(self._aberration_files[self.mode])
-        self.detector = 'SCA01'
+        self.detector = 'WFI01'
 
         self.opd_list = [os.path.join(self._STPSF_basepath, 'upscaled_HST_OPD.fits')]
         self.pupilopd = self.opd_list[-1]
@@ -746,6 +754,8 @@ class WFI(RomanInstrument):
         """
         The current WFI detector. See WFI.detector_list for valid values.
         """
+        if value.upper().startswith('SCA'):  # backward-compatible name assignment
+            value = f"WFI{value[-2:]}"
         if value.upper() not in self.detector_list:
             raise ValueError('Invalid detector. Valid detector names are: {}'.format(', '.join(self.detector_list)))
 
@@ -788,7 +798,8 @@ class WFI(RomanInstrument):
         value = value.upper()
 
         if value not in self.filter_list:
-            raise ValueError(f"Instrument {self.name} doesn't have a " f'filter called {value}.')
+            raise ValueError(f"Instrument {self.name} doesn't have a "
+                             f"filter called {value}.")
 
         self._filter = value
 
@@ -1182,7 +1193,8 @@ class RomanCoronagraph(RomanInstrument):
         """Print the table of observing mode options and their associated optical configuration"""
         _log.info('Printing the table of Roman Coronagraph Instrument observing modes supported by STPSF.')
         _log.info(
-            'Each is defined by a combo of camera, filter, apodizer, ' 'focal plane mask (FPM), and Lyot stop settings:'
+            'Each is defined by a combo of camera, filter, apodizer, '
+            'focal plane mask (FPM), and Lyot stop settings:'
         )
         _log.info(pprint.pformat(self._mode_table))
 
