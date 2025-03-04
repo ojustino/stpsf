@@ -11,7 +11,9 @@ WARNING: This model has not yet been validated against other PSF
 import logging
 import os.path
 import pprint
+from pathlib import Path  # ONLY IF USING detector SETTER TO ADJUST _filters
 
+import astropy.io.ascii as ioascii  # ONLY IF USING INHERITED _get_filters()
 import astropy.units as u
 import numpy as np
 import poppy
@@ -373,6 +375,34 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         optical aberrations. (Called in get_optical_system.)"""
         return self._detectors[self._detector]
 
+    # def _get_filters(self):
+    #     """
+    #     Create a list of valid filters and a dict of throughput file locations
+    #     and bandpass information. Identical to
+    #     SpaceTelescopeInstrument._get_filters() **except for** the addition of
+    #     a detector subdirectory in `filter_filename` to account for the WFI's
+    #     detector-specific throughputs as of Cycle 10.
+    #     """
+    #     filter_table = ioascii.read(os.path.join(self._STPSF_basepath, self.name, 'filters.tsv'))
+    #     filter_info = {}
+    #     filter_list = []  # preserve the order from the table
+
+    #     for filter_row in filter_table:
+    #         filter_filename = os.path.join(
+    #             self._STPSF_basepath,
+    #             self.name,
+    #             'filters',
+    #             self.detector,
+    #             '{}_throughput.fits'.format(filter_row['filter'])
+    #         )
+    #         filter_info[filter_row['filter']] = Filter(
+    #             name=filter_row['filter'],
+    #             filename=filter_filename,
+    #             default_nlambda=filter_row['nlambda']
+    #         )
+    #         filter_list.append(filter_row['filter'])
+    #     return filter_list, filter_info
+
     def _get_fits_header(self, result, options):
         """Populate FITS Header keywords"""
         super()._get_fits_header(result, options)
@@ -458,12 +488,13 @@ class WFIPupilController:
         self._auto_pupil_mask = True
 
         # Save formattable pupil file names for each pupil mask
-        self.pupil_file_formatters = {
-            'SKINNY': 'RST_WIM_Filter_skinny_{0}.fits.gz',
-            'WIDE': 'RST_WIM_Filter_F184_{0}.fits.gz',
-            'GRISM': 'RST_WSM_Grism_Grism_{0}.fits.gz',
-            'PRISM': 'RST_WSM_Prism_Prism_{0}.fits.gz',
-        }
+        # self.pupil_file_formatters = {
+        #     'SKINNY': 'RST_WIM_Filter_skinny_{0}.fits.gz',
+        #     'WIDE': 'RST_WIM_Filter_F184_{0}.fits.gz',
+        #     'GRISM': 'RST_WSM_Grism_Grism_{0}.fits.gz',
+        #     'PRISM': 'RST_WSM_Prism_Prism_{0}.fits.gz',
+        # }
+        # NEW: see self.pupil_file_formatter() method
 
     @property
     def pupil(self):
@@ -492,9 +523,9 @@ class WFIPupilController:
         raise AttributeError('Pupil mask cannot be directly specified. '
                              'Use lock_pupil_mask() instead.')
 
-    def _get_filter_mask(self, wfi_filter):
+    def _get_pupil_mask(self, wfi_filter):
         """
-        Returns the appropriate mask for a given WFI filter.
+        Returns the appropriate pupil mask for a given WFI filter.
 
         Parameters
         ----------
@@ -503,17 +534,17 @@ class WFIPupilController:
         """
         wfi_filter = wfi_filter.upper()
 
-        if wfi_filter in GRISM_FILTERS:
-            return 'GRISM'
-        elif wfi_filter in PRISM_FILTERS:
-            return 'PRISM'
-        elif wfi_filter in ['F184', 'F213']:
-            return 'WIDE'
-        else:
-            # this method should only be called after WFI.filter was validated,
-            # so we assume all inputs are valid and direct those that don't pass
-            # preceding cases to skinny
-            return 'SKINNY'
+        # if wfi_filter in GRISM_FILTERS:
+        #     return 'GRISM'
+        # elif wfi_filter in PRISM_FILTERS:
+        #     return 'PRISM'
+        # elif wfi_filter in ['F184', 'F213']:
+        #     return 'WIDE'
+        # else:
+        #     # this method should only be called after WFI.filter was validated,
+        #     # so we assume all inputs are valid and direct those that don't pass
+        #     # preceding cases to skinny
+        #     return 'SKINNY'
 
         return wfi_filter
 
@@ -530,7 +561,30 @@ class WFIPupilController:
         self._datapath = datapath
         self._pupil_basepath = os.path.join(self._datapath, 'pupils')
 
-    def update_pupil(self, filter, detector):
+    def pupil_file_formatter(self, wfi_filter, detector):
+        """
+        Generate proper pupil filename given a filter and a detector.
+
+        Parameters
+        ----------
+        wfi_filter : string
+            See WFI.filter_list for a list of valid filters.
+
+        detector : string
+            See WFI.detector_list for a list of valid detectors.
+        """
+        if wfi_filter.upper().startswith(('F', 'W')):
+            # return f"RST_WIM_Filter_{wfi_filter}_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
+            return f"RST_WIM_Filter_{wfi_filter}_{detector}.fits.gz"
+        elif wfi_filter.upper().startswith('GRISM'):
+            # STARTSWITH NOT NEEDED IF GRISM IS ONLY ONE ORDER NOW
+            # return f"RST_WSM_GRISM_grism_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
+            return f"RST_WSM_GRISM_grism_{detector}.fits.gz"
+        elif wfi_filter.upper() == 'PRISM':
+            # return f"RST_WSM_PRISM_prism_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
+            return f"RST_WSM_PRISM_prism_{detector}.fits.gz"
+
+    def update_pupil(self, wfi_filter, detector):
         """
         Selects the specific pupil file corresponding with a detector
         and filter combination sent from the WFI class. Also finds and
@@ -538,7 +592,7 @@ class WFIPupilController:
 
         Parameters
         ----------
-        filter : string
+        wfi_filter : string
             See WFI.filter_list for a list of valid filters.
 
         detector : string
@@ -553,13 +607,15 @@ class WFIPupilController:
             raise Exception('update_pupil called before setting pupil file path')
 
         # change detector string to match file format (e.g., "WFI01" -> "WFI_1")
-        det_substr = f'{detector[:3]}_{str(int((detector[3:])))}'
+        # det_substr = f'{detector[:3]}_{str(int((detector[3:])))}'
 
         # figure out proper mask based on filter (or use locked mask if enabled)
-        pupil_mask = self._get_filter_mask(filter) if self._auto_pupil_mask else self.pupil_mask
+        pupil_mask = self._get_pupil_mask(wfi_filter) if self._auto_pupil_mask else self.pupil_mask
 
-        path_formatter = self.pupil_file_formatters[pupil_mask]
-        pupil = os.path.join(self._pupil_basepath, path_formatter.format(det_substr))
+        # path_formatter = self.pupil_file_formatters[pupil_mask]
+        # pupil = os.path.join(self._pupil_basepath, path_formatter.format(det_substr))
+        pupil = os.path.join(self._pupil_basepath,
+                             self.pupil_file_formatter(pupil_mask, detector))
 
         self._pupil_mask = pupil_mask
         self._pupil = pupil
@@ -611,9 +667,12 @@ class WFIPupilController:
         filter : string
             See WFI.pupil_mask_list for a list of valid pupil masks.
         """
-        if pupil_mask not in self.pupil_file_formatters.keys():
-            raise Exception('invalid pupil mask')
-        elif not self._auto_pupil:
+        # NEW: moved validation of pupil_mask argument to WFI.lock_pupil mask
+        # since this class doesn't have direct access to the list of filters.
+        # if pupil_mask not in self.pupil_file_formatters.keys():
+        #     raise Exception('invalid pupil mask')
+        # elif not self._auto_pupil:
+        if not self._auto_pupil:
             raise Exception('Pupil is locked. Unlock pupil before locking pupil mask.')
         else:
             self._pupil_mask = pupil_mask
@@ -652,15 +711,25 @@ class WFI(RomanInstrument):
         # Initialize the pupil controller
         self._pupil_controller = WFIPupilController(self._datapath)
 
-        self.pupil_mask_list = list(self._pupil_controller.pupil_file_formatters.keys())
+        # self.pupil_mask_list = list(self._pupil_controller.pupil_file_formatters.keys())
+        self.pupil_mask_list = self.filter_list.copy()
 
         # Define default aberration files for WFI modes
-        self._aberration_files = {
-            'imaging': os.path.join(self._datapath, 'wim_zernikes_cycle9.csv'),
-            'prism': os.path.join(self._datapath, 'wsm_prism_zernikes_cycle9.csv'),
-            'grism': os.path.join(self._datapath, 'wsm_grism_zernikes_cycle9.csv'),
-            'custom': None,
-        }
+        # self._aberration_files = {
+        #     'imaging': os.path.join(self._datapath, 'wim_zernikes_cycle9.csv'),
+        #     'prism': os.path.join(self._datapath, 'wsm_prism_zernikes_cycle9.csv'),
+        #     'grism': os.path.join(self._datapath, 'wsm_grism_zernikes_cycle9.csv'),
+        #     'custom': None,
+        # }
+        self._aberration_files = {'custom': None}
+        self._aberration_files.update({
+            fltr: os.path.join(
+                self._datapath,
+                (f"{'WIM' if fltr.startswith(('F', 'W')) else 'WSM'}"
+                 f"_{fltr}_zernikes_cycle10.csv"))
+            # NEEDS MODIFICATION IF WE KEEP GRISM0/GRISM1 FILTER NAMES
+            for fltr in self.filter_list
+        })
 
         # Load and set default detector from aberration file
         self._detector_npixels = 4096
@@ -740,19 +809,23 @@ class WFI(RomanInstrument):
         else:
             raise ValueError(f"Instrument {self.name} doesn't have a filter " f'called {wfi_filter}.')
 
-    def _update_pupil(self, filter=None, detector=None):
+    def _update_pupil(self, wfi_filter=None, detector=None):
         if detector is None:
             detector = self.detector
-        if filter is None:
-            filter = self.filter
+        if wfi_filter is None:
+            wfi_filter = self.filter
 
-        if detector is not None and filter is not None:
-            self._pupil_controller.update_pupil(filter=filter, detector=detector)
+        if detector is not None and wfi_filter is not None:
+            self._pupil_controller.update_pupil(wfi_filter=wfi_filter,
+                                                detector=detector)
 
     @RomanInstrument.detector.setter
     def detector(self, value):
         """
         The current WFI detector. See WFI.detector_list for valid values.
+
+        As of Cycle 10, also switches the current filter's throughput file location
+        since these are now detector-based.
         """
         if value.upper().startswith('SCA'):  # backward-compatible name assignment
             value = f"WFI{value[-2:]}"
@@ -789,6 +862,63 @@ class WFI(RomanInstrument):
             # Update pixelscale based on specified aperture name
             self.pixelscale = self._get_pixelscale_from_apername(value)
 
+        # adjust filter throughput file location
+        found_parent = False
+        filters_info = {}
+        for fl, info in self._filters.items():
+            filter_path = Path(info.filename)
+
+            # find 'filters', the earliest common parent directory of default
+            # stpsf filter file structure (stpsf-data/INSTRUMENT/*filters*)
+            # and WFI's filter file structure (stpsf-data/WFI/*filters*/DETECTOR).
+            if not found_parent:
+                for parent in filter_path.parents:
+                    if parent.name == 'filters':
+                        found_parent = True
+                        break
+                    else:
+                        continue
+            # done this way because SpaceTelescopeInstrument.__init__()
+            # (a WFI parent class) sets filter location to the default WFI path
+            # with SpaceTelescopeInstrument._get_filters() upon class creation,
+            # so the filter files' direct parent directory the first time a
+            # detector is assigned in WFI.__init__() (the "filters" directory)
+            # is not at the same level as on later changes to the detector attribute
+            # (the corresponding "WFINN" child directory of "WFI/filters").
+
+            # save filter info but change throughput file based on new detector
+            info_edit = {key : (val if key != 'filename'
+                                else str(parent / self._detector / filter_path.name))
+                         for key, val in info._asdict().items()}
+            filters_info[fl] = stpsf_core.Filter(**info_edit)
+
+        self._filters = filters_info
+
+    ################################
+    # FILTER THROUGHPUT NOTE:
+    # could also supersede SpaceTelescopeInstrument._get_filters() with a
+    # _get_filters() in RomanInstrument or WFI that adds a "detector" to
+    # the filter_filename path, but we don't yet have WFI._detector_list
+    # [set in WFI._load_detector_aberrations() later in WFI.__init__()]
+    # or WFI._detector [set through WFI.detector later in WFI.__init__()].
+
+    # {A} Can't set WFI._detector_list earlier in WFI.__init__() because
+    # generating the path needed as an argument requires knowing the
+    # filters that the new _get_filters() method is trying to generate
+    # in the first place.
+
+    # {B} Can't set WFI.detector earlier in
+    # WFI.__init__() because SpaceTelescopeInstrument.__init__() will
+    # set self._detector back to None. Even a modification to
+    # SpaceTelescopeInstrument.__init__() like
+    # `if not hasattr(self, '_detector'): self._detector = None`
+    # (which I'm wary to do due to unintended effects on the JWST classes)
+    # because WFI.detector's setter triggers WFI._update_pupil(), which
+    # again requires knowledge of the filters. COULD do this if we set
+    # WFI._detector (note underscore) instead, but do we want to skip the
+    # setter in that scenario?
+    ################################
+
     @RomanInstrument.filter.setter
     def filter(self, value):
         """
@@ -807,8 +937,11 @@ class WFI(RomanInstrument):
         # empty) and if they haven't been locked by user
         if self._aberration_files and not self._is_custom_aberration:
             # identify aberration file for new mode
-            mode = self._get_filter_mode(self._filter)
-            aberration_file = self._aberration_files[mode]
+            # mode = self._get_filter_mode(self._filter)
+            # aberration_file = self._aberration_files[mode]
+            # NEW: delete self._get_filter_mode() now that filters are one-to-one
+            # with aberration files?
+            aberration_file = self._aberration_files[self._filter]
 
             # if aberrations are not already loaded for the new mode,
             # load and replace detectors using the new mode's aberration file
@@ -818,7 +951,7 @@ class WFI(RomanInstrument):
         # Update pupil only if detector was previously loaded
         # ( i.e., skip this step when called by super() )
         if self.detector is not None:
-            self._update_pupil(filter=self._filter)
+            self._update_pupil(wfi_filter=self._filter)
 
     @property
     def pupil(self):
@@ -853,7 +986,10 @@ class WFI(RomanInstrument):
         """
         The current WFI mode. Cannot be directly set by the user.
         """
-        return self._get_filter_mode(self.filter)
+        # return self._get_filter_mode(self.filter)
+        # NEW: delete self._get_filter_mode() now that filters are one-to-one
+        # with aberration files?
+        return self.filter
 
     @mode.setter
     def mode(self, value):
@@ -927,10 +1063,14 @@ class WFI(RomanInstrument):
         pupil_path : string
             The custom path to your pupil file.
         """
-        if os.path.isfile(pupil_path):
+        # TEMP UNTIL NEW PUPIL FILES ARE IN PLACE
+        # if os.path.isfile(pupil_path):
+        if True:
             self._pupil_controller.lock_pupil(pupil_path)
         else:
-            raise FileNotFoundError(f'{pupil_path} not found.')
+            pass
+            # TEMP UNTIL NEW PUPIL FILES ARE IN PLACE
+            # raise FileNotFoundError(f'{pupil_path} not found.')
 
         _log.warning('Disabling default pupil selection behavior.')
 
@@ -943,6 +1083,7 @@ class WFI(RomanInstrument):
         """
         self._pupil_controller.unlock_pupil()
         self._update_pupil()  # reset pupil
+        _log.info('Restoring default pupil selection behavior.')
 
     def lock_pupil_mask(self, pupil_mask):
         """
@@ -958,8 +1099,11 @@ class WFI(RomanInstrument):
         filter : string
             See WFI.pupil_mask_list for a list of valid pupil masks.
         """
+        if pupil_mask not in self.pupil_mask_list:
+            raise Exception('invalid pupil mask')
         self._pupil_controller.lock_pupil_mask(pupil_mask)
         self._update_pupil()
+        _log.warning('Disabling default pupil mask selection behavior.')
 
     def unlock_pupil_mask(self):
         """
@@ -969,6 +1113,7 @@ class WFI(RomanInstrument):
         """
         self._pupil_controller.unlock_pupil_mask()
         self._update_pupil()  # reset pupil mask
+        _log.info('Restoring default pupil mask selection behavior.')
 
 
 class RomanCoronagraph(RomanInstrument):
