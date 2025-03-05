@@ -20,7 +20,7 @@ authors:
   - given-names: Shannon
     family-names: Osborne
     affiliation: Fred Hutchinson Cancer Center
-    orcid: https://orcid.org/0009-0001-8609-1518'
+    orcid: 'https://orcid.org/0009-0001-8609-1518'
   - given-names: Robel
     family-names: Geda
     affiliation: Princeton University
