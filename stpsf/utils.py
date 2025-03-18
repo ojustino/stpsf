@@ -206,6 +206,8 @@ def auto_download_stpsf_data():
             # Extract the tarball
             with tarfile.open(filename, "r:gz") as tar:
                 tar.extractall(default_path.parent)
+	# TODO filter="fully_trusted" will need to be added as a parameter once python 3.14
+	# is adopted due to advertised changing defaults in python.
 
         if not any(default_path.iterdir()):
             raise IOError(f"Failed to get and extract STPSF data files to {default_path}")
