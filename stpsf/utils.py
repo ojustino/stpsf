@@ -205,7 +205,7 @@ def auto_download_stpsf_data():
 
             # Extract the tarball
             with tarfile.open(filename, "r:gz") as tar:
-                tar.extractall(default_path.parent, filter="fully_trusted")
+                tar.extractall(default_path.parent)
 
         if not any(default_path.iterdir()):
             raise IOError(f"Failed to get and extract STPSF data files to {default_path}")
