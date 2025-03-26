@@ -290,6 +290,20 @@ def test_WFI_limits_interpolation_range():
     )
 
 
+def test_WFI_auto_aperturename_and_pixelscale():
+    wfi = roman.WFI()
+    assert wfi.aperturename == "WFI01_FULL", "Aperture name should match detector"
+    wfi.detector = 'SCA12'
+    assert wfi.aperturename == "WFI12_FULL", "Aperture name should match detector"
+
+
+    aperture = wfi.siaf[wfi.aperturename]
+    assert wfi.pixelscale == (aperture.XSciScale + aperture.YSciScale)/2, "Pixel scale should match the SIAF for that aperturename"
+
+
+# -------- Test functions for the (very limited) Roman Coronagraph implementation below here
+
+
 def test_coronagraph_detector_position():
     """Test existence of the Coronagraph detector position etc, and that you can't set it."""
     cor = roman.RomanCoronagraph()
