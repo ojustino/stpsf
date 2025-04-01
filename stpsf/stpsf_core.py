@@ -343,6 +343,13 @@ class SpaceTelescopeInstrument(poppy.instrument.Instrument):
         """Update SIAF aperture name after change in detector or other relevant properties"""
         self.aperturename = self._detectors[self._detector]
 
+    def _get_pixelscale_from_apername(self, apername):
+        """Simple utility function to look up pixelscale from apername"""
+        ap = self.siaf[apername]
+        # Here we make the simplifying assumption of **square** pixels, which is true within 0.5%.
+        # The slight departures from this are handled in the distortion model; see distortion.py
+        return (ap.XSciScale + ap.YSciScale) / 2
+
     def _get_fits_header(self, result, options):
         """populate FITS Header keywords"""
         super(SpaceTelescopeInstrument, self)._get_fits_header(result, options)
@@ -1139,13 +1146,6 @@ class JWInstrument(SpaceTelescopeInstrument):
 
         except KeyError:
             raise ValueError('Not a valid aperture name for {}: {}'.format(self.name, aperture_name))
-
-    def _get_pixelscale_from_apername(self, apername):
-        """Simple utility function to look up pixelscale from apername"""
-        ap = self.siaf[apername]
-        # Here we make the simplifying assumption of **square** pixels, which is true within 0.5%.
-        # The slight departures from this are handled in the distortion model; see distortion.py
-        return (ap.XSciScale + ap.YSciScale) / 2
 
     def _get_fits_header(self, result, options):
         """populate FITS Header keywords"""
