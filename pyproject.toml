@@ -12,6 +12,7 @@ description = "Creates simulated point spread functions for Space Telescopes (Ja
 authors = [
     { name = "Association of Universities for Research in Astronomy", email = "help@stsci.edu" },
 ]
+license-files = ["LICENSE.md"]
 dynamic = [
     "version",
 ]
@@ -28,9 +29,6 @@ dependencies = [
     "synphot>=1.0.0",
     "astroquery>=0.4.6",
 ]
-
-[project.license]
-file = "LICENSE.md"
 
 [project.optional-dependencies]
 test = [
