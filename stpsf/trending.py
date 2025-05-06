@@ -1965,9 +1965,8 @@ def show_wfs_during_program(
             # the results from the zoom function preserve the STD between both phase maps and
             # the total sum between the phase maps is proportional to the zoom value
             # by construction there are no OPDs larger than 256x256
-            print('before, ',opd.shape)
             opd = scipy.ndimage.zoom(opd, 256 / opd.shape[0])
-            print('after, ',opd.shape)
+
 
         opds.append(opd)
         wfs_dates.append(opdtable[row_index]['date'])
