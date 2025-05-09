@@ -18,7 +18,7 @@ import poppy
 from astropy.io import fits
 from scipy.interpolate import griddata
 
-from . import distortion, utils, stpsf_core
+from . import distortion, utils, stpsf_core, detectors
 
 _log = logging.getLogger('stpsf')
 
@@ -402,7 +402,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         add_distortion = options.get('add_distortion', True)
         # Add distortion if set in calc_psf
         if add_distortion:
-            _log.debug('Adding PSF distortion(s)')
+            _log.info('Adding PSF distortion(s) and detector effects')
 
             # Set up new extensions to add distortion to:
             n_exts = len(result)
@@ -414,7 +414,10 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
                 _log.debug('Appending new extension {} with EXTNAME = {}'.format(ext_new, result[ext_new].header['EXTNAME']))
 
             _log.debug('WFI: Adding optical distortion')
+            # TODO - we may not actually want to include this for WFI. To be confirmed.
             psf_distorted = distortion.apply_distortion(result)  # apply siaf distortion model
+            # apply detector charge transfer model
+            psf_distorted = detectors.apply_detector_charge_diffusion(psf_distorted, options)
 
             # Edit the variable to match if input didn't request distortion
             # (cannot set result = psf_distorted due to return method)
