@@ -21,6 +21,7 @@ Releasing new data packages
     #. If you are on the Institute network
         #. ``$ cd stpsf/dev_utils/``
         #. ``$ ./master_data_release.sh 0.X.Y``
+        #. Verify that the stpsf data in central store has correct permissions (rwxrwxr-x)
     #. If you're working from a local data root
         #. ``$ cd stpsf/dev_utils/``
         #. ``$ DATAROOT="/Users/you/stpsf-data-sources/" ./make-data-sdist.sh 0.X.Y``
