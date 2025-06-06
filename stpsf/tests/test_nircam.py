@@ -322,7 +322,9 @@ def test_nircam_coron_unocculted(plot=False):
         nc.display()
 
     psf = nc.calc_psf(monochromatic=2.12e-6)
-    return psf
+
+    # Assert that something exists
+    assert len(psf) > 0
 
 
 def test_defocus(fov_arcsec=1, display=False):
