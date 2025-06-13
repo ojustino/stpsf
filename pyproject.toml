@@ -54,11 +54,14 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "*" = [
-    "*.fits, *.csv",
+    "*.fits", "*.csv", "scripts/"
 ]
 "stpsf.tests" = [
     "data/*",
 ]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["docs/_build/","build/"]
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
@@ -84,19 +87,11 @@ source = [
 ]
 omit = [
     "stpsf/conftest*",
-    "stpsf/cython_version*",
-    "stpsf/setup_package*",
-    "stpsf/*/setup_package*",
-    "stpsf/*/*/setup_package*",
     "stpsf/tests/*",
     "stpsf/*/tests/*",
     "stpsf/*/*/tests/*",
     "stpsf/version*",
     "*/stpsf/conftest*",
-    "*/stpsf/cython_version*",
-    "*/stpsf/setup_package*",
-    "*/stpsf/*/setup_package*",
-    "*/stpsf/*/*/setup_package*",
     "*/stpsf/tests/*",
     "*/stpsf/*/tests/*",
     "*/stpsf/*/*/tests/*",
@@ -114,19 +109,11 @@ exclude_lines = [
 ]
 omit = [
     "stpsf/conftest*",
-    "stpsf/cython_version*",
-    "stpsf/setup_package*",
-    "stpsf/*/setup_package*",
-    "stpsf/*/*/setup_package*",
     "stpsf/tests/*",
     "stpsf/*/tests/*",
     "stpsf/*/*/tests/*",
     "stpsf/version*",
     "*/stpsf/conftest*",
-    "*/stpsf/cython_version*",
-    "*/stpsf/setup_package*",
-    "*/stpsf/*/setup_package*",
-    "*/stpsf/*/*/setup_package*",
     "*/stpsf/tests/*",
     "*/stpsf/*/tests/*",
     "*/stpsf/*/*/tests/*",
