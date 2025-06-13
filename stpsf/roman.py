@@ -18,7 +18,7 @@ import poppy
 from astropy.io import fits
 from scipy.interpolate import griddata
 
-from . import distortion, utils, stpsf_core
+from . import distortion, utils, stpsf_core, detectors
 
 _log = logging.getLogger('stpsf')
 
@@ -267,6 +267,10 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.siaf = stpsf_core.get_siaf_with_caching('roman')
+        self._aperturename = None
+
         self.options['jitter'] = 'gaussian'
         self.options['jitter_sigma'] = 0.012  # arcsec/axis, see https://roman.ipac.caltech.edu/sims/Param_db.html#telescope
 
@@ -398,7 +402,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         add_distortion = options.get('add_distortion', True)
         # Add distortion if set in calc_psf
         if add_distortion:
-            _log.debug('Adding PSF distortion(s)')
+            _log.info('Adding PSF distortion(s) and detector effects')
 
             # Set up new extensions to add distortion to:
             n_exts = len(result)
@@ -410,7 +414,10 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
                 _log.debug('Appending new extension {} with EXTNAME = {}'.format(ext_new, result[ext_new].header['EXTNAME']))
 
             _log.debug('WFI: Adding optical distortion')
+            # TODO - we may not actually want to include this for WFI. To be confirmed.
             psf_distorted = distortion.apply_distortion(result)  # apply siaf distortion model
+            # apply detector charge transfer model
+            psf_distorted = detectors.apply_detector_charge_diffusion(psf_distorted, options)
 
             # Edit the variable to match if input didn't request distortion
             # (cannot set result = psf_distorted due to return method)
@@ -745,6 +752,32 @@ class WFI(RomanInstrument):
         self._detector = value.upper()
         if self._detector is not None:
             self._update_pupil(detector=self._detector)
+        self._update_aperturename()
+
+    def _update_aperturename(self):
+        """Update SIAF aperture name after change in detector or other relevant properties.
+        This function handles just inferring the new value of the aperturename.
+        See the aperturename.setter function for additional changed based on that.
+        """
+        self.aperturename = self._detector.replace('SCA', 'WFI') + "_FULL"
+
+    @RomanInstrument.aperturename.setter
+    def aperturename(self, value):
+        """Set SIAF aperture name to new value, with validation.
+
+        This also updates the pixelscale to the local value for that aperture, for a small precision enhancement.
+        """
+        try:
+            ap = self.siaf[value]
+        except KeyError:
+            raise ValueError(f'Aperture name {value} not a valid SIAF aperture name for {self.name}')
+
+        # Only update if new value is different
+        if self._aperturename != value:
+            self._aperturename = value
+
+            # Update pixelscale based on specified aperture name
+            self.pixelscale = self._get_pixelscale_from_apername(value)
 
     @RomanInstrument.filter.setter
     def filter(self, value):

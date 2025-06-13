@@ -36,10 +36,6 @@ including its Wide Field Instrument and a preliminary version of the Coronagraph
 
    The current Roman WFI optical model was provided by Goddard Space Flight Center circa 2021 (the Cycle 9 reference data); a new optical model is currently being implemented in STPSF.
 
-Developed by Marshall Perrin, Joseph Long, Shannon Osborne, Robel Geda, Bradley Sappington, Marcio Meléndez,
-Charles-Philippe Lajoie, Jarron Leisenring, Neil Zimmerman, Keira Brooks,
-Justin Otor, Trey Kulp, Lauren Chambers, Alden Jurling, and collaborators, 2010-2024.
-
 Documentation can be found online at https://stpsf.readthedocs.io
 
 STPSF requires input data for its simulations, including optical path
