@@ -575,9 +575,8 @@ def display_psf_grid(grid, zoom_in=True, figsize=(14, 12), scale_range=1e-4, dif
     import matplotlib
     import matplotlib.pyplot as plt
 
-    def tuple_to_int(t):
-        if isinstance(t, tuple):
-            return (int(t[0]), int(t[1]))
+    def array_to_int(t):
+        return (int(t[0]), int(t[1]))
 
     def show_grid_helper(grid, data, title='Grid of PSFs', vmax=0, vmin=0, scale='log'):
         npsfs = grid.data.shape[0]
@@ -605,7 +604,7 @@ def display_psf_grid(grid, zoom_in=True, figsize=(14, 12), scale_range=1e-4, dif
                 im = axes[n - 1 - iy, ix].imshow(data[i], norm=norm, cmap=cmap, origin='lower')
                 axes[n - 1 - iy, ix].xaxis.set_visible(False)
                 axes[n - 1 - iy, ix].yaxis.set_visible(False)
-                axes[n - 1 - iy, ix].set_title('{}'.format(tuple_to_int(grid.grid_xypos[i])))
+                axes[n - 1 - iy, ix].set_title('{}'.format(array_to_int(grid.grid_xypos[i])))
                 if zoom_in:
                     axes[n - 1 - iy, ix].use_sticky_edges = False
                     axes[n - 1 - iy, ix].margins(x=-0.25, y=-0.25)
