@@ -45,7 +45,7 @@ class SegmentUpdate(object):
             # parse from some XML in a SUR file
             self.id = int(xmlnode.attrib['id'])
             self.type = xmlnode.attrib['type']
-            self.segment = xmlnode.attrib['seg_id'][0:2]
+            self.segment = xmlnode.attrib['seg_id']
             self.absolute = xmlnode.attrib['absolute'] == 'true'
             self.coord = xmlnode.attrib['coord']  # local or global
             self.stage_type = xmlnode.attrib['stage_type']  # recenter_fine, fine_only, none
