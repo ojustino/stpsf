@@ -274,7 +274,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         self._aperturename = None
 
         self.options['jitter'] = 'gaussian'
-        self.options['jitter_sigma'] = 0.012  # arcsec/axis, see https://roman.ipac.caltech.edu/sims/Param_db.html#telescope
+        self.options['jitter_sigma'] = 0.012  # arcsec/axis, see https://roman.ipac.caltech.edu/page/param-db#telescope
 
     def calc_psf(
         self,
