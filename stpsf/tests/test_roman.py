@@ -140,9 +140,9 @@ def test_WFI_pupil_controller():
 
         # Test effect of changing the filter on pupil path
         for filter in wfi.filter_list:
-            wfi.filter = filter
+            wfi.filter = fltr
 
-            assert wfi.pupil == pupil_path(wfi), f'Pupil was not set to correct value for filter {filter}'
+            assert wfi.pupil == pupil_path(wfi), f'Pupil was not set to correct value for filter {fltr}'
 
     # Test persistence of pupil and pupil mask locks through a PSF calculation
     wfi2 = roman.WFI()
@@ -162,7 +162,7 @@ def test_WFI_pupil_controller():
 
 def test_WFI_detector_position_setter():
     wfi = roman.WFI()
-    wfi.detector = 'SCA01'
+    wfi.detector = 'WFI01'
     valid_pos = (4000, 1000)
     wfi.detector_position = valid_pos
     assert wfi._detectors[wfi._detector].field_position == valid_pos, (
@@ -174,7 +174,7 @@ def test_WFI_detector_position_setter():
 
 def test_WFI_includes_aberrations():
     wfi = roman.WFI()
-    wfi.detector = 'SCA01'
+    wfi.detector = 'WFI01'
     osys = wfi.get_optical_system()
     assert isinstance(osys[2], roman.FieldDependentAberration), (
         'Third plane of Roman WFI optical system should be the ' 'field dependent aberration virtual optic'
@@ -207,8 +207,8 @@ def test_swapping_modes(wfi=None):
 def test_custom_aberrations():
     wfi = roman.WFI()
 
-    # Use grism aberration_file for testing
-    test_aberration_file = wfi._aberration_files['grism']
+    # Use GRISM0 aberration_file for testing
+    test_aberration_file = wfi._aberration_files['GRISM0']
 
     # Test override
     # -------------
@@ -227,7 +227,7 @@ def test_custom_aberrations():
 
 def test_WFI_limits_interpolation_range():
     wfi = roman.WFI()
-    det = wfi._detectors['SCA01']
+    det = wfi._detectors['WFI01']
     det.get_aberration_terms(1.29e-6)
     det.field_position = (0, 0)
     det.get_aberration_terms(1.29e-6)
@@ -293,7 +293,7 @@ def test_WFI_limits_interpolation_range():
 def test_WFI_auto_aperturename_and_pixelscale():
     wfi = roman.WFI()
     assert wfi.aperturename == "WFI01_FULL", "Aperture name should match detector"
-    wfi.detector = 'SCA12'
+    wfi.detector = 'WFI12'
     assert wfi.aperturename == "WFI12_FULL", "Aperture name should match detector"
 
 

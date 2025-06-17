@@ -16,7 +16,7 @@ STPSF is a Python package that computes simulated point spread functions (PSFs) 
    :align: center
    :alt: Sample PSFs for the filters in the Roman WFI.
 
-   Sample PSFs for the filters in the Roman WFI on SCA01. Note that
+   Sample PSFs for the filters in the Roman WFI on detector WFI01. Note that
    the prism and grism PSFs shown here are monochromatic.
 
 

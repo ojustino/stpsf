@@ -19,7 +19,7 @@ Wide Field Instrument (WFI)
    :align: center
    :alt: Sample PSFs for the filters in the Roman WFI.
 
-   Sample PSFs for the filters in the Roman WFI on SCA01. Angular
+   Sample PSFs for the filters in the Roman WFI on detector WFI01. Angular
    scale in arcseconds, log-scaled intensity. Note that the prism and
    grism PSFs shown here are monochromatic.
 
@@ -93,7 +93,7 @@ pixel coordinates within that detector. A newly instantiated WFI model already
 has a default detector and position. ::
 
    >>> wfi.detector
-   'SCA01'
+   'WFI01'
    >>> wfi.detector_position
    (2048, 2048)
 
@@ -106,8 +106,8 @@ has a default detector and position. ::
 The WFI field of view is laid out as shown in the figure. To select a different detector, assign its name to the ``detector`` attribute::
 
    >>> wfi.detector_list
-   ['SCA01', 'SCA02', 'SCA03', 'SCA04', 'SCA05', 'SCA06', 'SCA07', 'SCA08', 'SCA09', 'SCA10', 'SCA11', 'SCA12', 'SCA13', 'SCA14', 'SCA15', 'SCA16', 'SCA17', 'SCA18']
-   >>> wfi.detector = 'SCA03'
+   ['WFI01', 'WFI02', 'WFI03', 'WFI04', 'WFI05', 'WFI06', 'WFI07', 'WFI08', 'WFI09', 'WFI10', 'WFI11', 'WFI12', 'WFI13', 'WFI14', 'WFI15', 'WFI16', 'WFI17', 'WFI18']
+   >>> wfi.detector = 'WFI03'
 
 The usable, photosensitive regions of the Wide Field Instrument's detectors are
 slightly smaller than their 4096 by 4096 pixel dimensions because the outermost
@@ -144,21 +144,21 @@ the PSF differs between the two extreme edges of the instrument field of view.
 
    >>> wfi = roman.WFI()
    >>> wfi.filter = 'F129'
-   >>> wfi.detector = 'SCA09'
+   >>> wfi.detector = 'WFI09'
    >>> wfi.detector_position = (4, 4)
-   >>> psf_sca09 = wfi.calc_psf()
-   >>> wfi.detector = 'SCA17'
+   >>> psf_wfi09 = wfi.calc_psf()
+   >>> wfi.detector = 'WFI17'
    >>> wfi.detector_position = (4092, 4092)
-   >>> psf_sca17 = wfi.calc_psf()
-   >>> fig, (ax_sca09, ax_sca17, ax_diff) = plt.subplots(1, 3, figsize=(16, 4))
-   >>> stpsf.display_psf(psf_sca09, ax=ax_sca09, imagecrop=2.0,
-                           title='WFI SCA09, bottom left - F129')
-   >>> stpsf.display_psf(psf_sca17, ax=ax_sca17, imagecrop=2.0,
-                           title='WFI SCA17, top right - F129')
-   >>> stpsf.display_psf_difference(psf_sca09, psf_sca17, ax=ax_diff,
-                                       vmax=5e-3, title='SCA09 - SCA17', imagecrop=2.0)
+   >>> psf_wfi17 = wfi.calc_psf()
+   >>> fig, (ax_wfi09, ax_wfi17, ax_diff) = plt.subplots(1, 3, figsize=(16, 4))
+   >>> stpsf.display_psf(psf_wfi09, ax=ax_wfi09, imagecrop=2.0,
+                         title='WFI09, bottom left - F129')
+   >>> stpsf.display_psf(psf_wfi17, ax=ax_wfi17, imagecrop=2.0,
+                         title='WFI17, top right - F129')
+   >>> stpsf.display_psf_difference(psf_wfi09, psf_wfi17, ax=ax_diff,
+                                    vmax=5e-3, title='WFI09 - WFI17', imagecrop=2.0)
 
-.. figure:: ./roman_figures/compare_wfi_sca09_sca17.png
+.. figure:: ./roman_figures/compare_wfi09_wfi17.png
    :alt: This figure shows oversampled PSFs in the F129 filter at two different field points, and the intensity difference image between the two.
 
    This figure shows oversampled PSFs in the F129 filter at two different field
@@ -180,7 +180,7 @@ the shorter wavelength imaging filters, both grism orders, and the prism.
 (The prism mode operates without obstruction, so it is only assigned a
  "pupil mask" in STPSF for the sake of consistency with other optical elements.)
 
-.. figure:: ./roman_figures/pupil_mask_by_sca.gif
+.. figure:: ./roman_figures/pupil_mask_by_detector.gif
    :alt: Pupil masks at different field points.
 
    Pupil masks at different field points.

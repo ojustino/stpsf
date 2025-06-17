@@ -1011,7 +1011,8 @@ class WFI(RomanInstrument):
         names/values (comments in parentheses should not be included):
         - sca (Detector number)
         - wavelength (µm)
-        - field_point (field point number/ID for SCA and wavelength, starts with 1)
+        - field_point (field point number/ID for detector and wavelength.
+                       starts with 1)
         - local_x (mm, local detector coords)
         - local_y (mm, local detector coords)
         - global_x (mm, global instrument coords)
