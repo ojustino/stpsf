@@ -100,7 +100,7 @@ class FieldDependentAberration(poppy.ZernikeWFE):
 
     """By default, `get_aberration_terms` will zero out Z1, Z2, and Z3
     (piston, tip, and tilt) as they are not meaningful for telescope
-    PSF calculations (the former is irrelevant, the latter two would
+    PSF calculations (the former is irrelevant; the latter two would
     be handled by a distortion solution). Change
     `_omit_piston_tip_tilt` to False to include the Z1-3 terms."""
     _omit_piston_tip_tilt = True
@@ -214,7 +214,7 @@ def _load_wfi_detector_aberrations(filename):
     from astropy.io import ascii
 
     zernike_table = ascii.read(filename, encoding='utf-8-sig')
-    detectors = {}
+    detectors_dict = {}
 
     def build_detector_from_table(number, zernike_table):
         """Build a FieldDependentAberration optic for a detector using
@@ -253,9 +253,23 @@ def _load_wfi_detector_aberrations(filename):
 
     detector_ids = set(zernike_table['sca'])
     for detid in detector_ids:
-        detectors['WFI{:02}'.format(detid)] = build_detector_from_table(detid, zernike_table)
+        detectors_dict['WFI{:02}'.format(detid)] = build_detector_from_table(detid, zernike_table)
 
-    return detectors
+    return detectors_dict
+
+
+class _RomanInstrumentOptionsDict(dict):
+    """
+    A wrapper for the options dict that prevents the `add_distortion` key from
+    being set to True or False since distortion can't be added to PSFs from
+    Roman WFI (they come pre-distorted) or the Coronagraph Instrument
+    (distortion not implemented).
+    """
+    def __setitem__(self, key, value):
+        if key == 'add_distortion' and value != 'NA':
+            _log.warn('WFI: add_distortion disabled for Roman PSFs')
+        else:
+            super().__setitem__(key, value)
 
 
 @utils.combine_docstrings
@@ -272,6 +286,11 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         self.siaf = stpsf_core.get_siaf_with_caching('roman')
         self._aperturename = None
+
+        # reassign self.options from dict to _RomanInstrumentOptionsDict,
+        # mainly to prevent user modification of the add_distortion key
+        self.options['add_distortion'] = 'NA'  # distortion is always on
+        self.options = _RomanInstrumentOptionsDict(self.options.copy())
 
         self.options['jitter'] = 'gaussian'
         self.options['jitter_sigma'] = 0.012  # arcsec/axis, see https://roman.ipac.caltech.edu/page/param-db#telescope
@@ -292,37 +311,27 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         save_intermediates=False,
         return_intermediates=False,
         normalize='first',
-        add_distortion=True,
         crop_psf=False,
     ):
         """
-        Compute a PSF
+        Compute a PSF.
+
+        Note that Roman WFI PSFs, unlike those from the JWST instruments,
+        always include distortion. Additionally, distortion is not implemented
+        in STPSF for the Roman Coronagraph Instrument. As such, the Roman
+        implementation of `calc_psf()` does not include an `add_distortion`
+        argument.
 
         Parameters
         ----------
-        add_distortion : bool
-            If True, will add 2 new extensions to the PSF HDUlist object. The 2nd extension
-            will be a distorted version of the over-sampled PSF and the 3rd extension will
-            be a distorted version of the detector-sampled PSF.
         crop_psf : bool
-            Included for API compatibility with the JWST instrument classes, but has no
-            effect on the results for Roman WFI PSF calculations.
+            Included for API compatibility with the JWST instrument classes,
+            but has no effect on the results for Roman WFI PSF calculations.
 
         """
 
-        # Save new keywords to the options dictionary
-        self.options['add_distortion'] = add_distortion
+        # Save new keyword to the options dictionary
         self.options['crop_psf'] = crop_psf
-
-        # add_distortion keyword is not implemented for RomanCoronagraph Class
-        if self.name == 'RomanCoronagraph' and add_distortion is True:
-            self.options['add_distortion'] = False
-            self.options['crop_psf'] = False
-            info_message = (
-                'Geometric distortions are not implemented in STPSF for Roman CGI.  '
-                'The add_distortion keyword must be set to False for this case.'
-            )
-            _log.info(info_message)
 
         # Run poppy calc_psf
         psf = stpsf_core.SpaceTelescopeInstrument.calc_psf(
@@ -412,7 +421,12 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
     def _calc_psf_format_output(self, result, options):
         """
-        Add distortion to the created 1-extension PSF
+        Add detector charge diffusion model to the created 1-extension PSF.
+
+        (As of STPSF v2.1.0, no longer applies distortion given that WFI optical
+         models were delivered with inherent distortion effects in Cycle 10. If
+         future deliveries arrive sans distortion, see pre-v2.1.0 commit history
+         for code that handled distortion.)
 
         Apply desired formatting to output file:
                  - rebin to detector pixel scale if desired
@@ -428,32 +442,27 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         Modifies the 'result' HDUList object.
 
         """
-        # Pull values from options dictionary
-        add_distortion = options.get('add_distortion', True)
-        # Add distortion if set in calc_psf
-        if add_distortion:
-            _log.info('Adding PSF distortion(s) and detector effects')
+        # Set up new extensions to which apply detector charge transfer model
+        _log.info('Adding PSF detector effects. add_distortion disabled for Roman.')
 
-            # Set up new extensions to add distortion to:
-            n_exts = len(result)
-            for ext in np.arange(n_exts):
-                hdu_new = fits.ImageHDU(result[ext].data, result[ext].header)  # these will be the PSFs that are edited
-                result.append(hdu_new)
-                ext_new = ext + n_exts
-                result[ext_new].header['EXTNAME'] = result[ext].header['EXTNAME'][0:4] + 'DIST'  # change extension name
-                _log.debug('Appending new extension {} with EXTNAME = {}'.format(ext_new, result[ext_new].header['EXTNAME']))
+        n_exts = len(result)
+        for ext in np.arange(n_exts):
+            hdu_new = fits.ImageHDU(result[ext].data, result[ext].header)
+            # ^ these will be the PSFs that are edited ^
+            result.append(hdu_new)
+            ext_new = ext + n_exts
+            result[ext_new].header['EXTNAME'] = result[ext].header['EXTNAME'][0:4] + 'DIST'  # change extension name
+            _log.debug('Appending new extension {} with EXTNAME = {}'.format(ext_new, result[ext_new].header['EXTNAME']))
 
-            _log.debug('WFI: Adding optical distortion')
-            # TODO - we may not actually want to include this for WFI. To be confirmed.
-            psf_distorted = distortion.apply_distortion(result)  # apply siaf distortion model
-            # apply detector charge transfer model
-            psf_distorted = detectors.apply_detector_charge_diffusion(psf_distorted, options)
+        # apply detector charge transfer model
+        psf_updated = detectors.apply_detector_charge_diffusion(result,
+                                                                options)
 
-            # Edit the variable to match if input didn't request distortion
-            # (cannot set result = psf_distorted due to return method)
-            [result.append(fits.ImageHDU()) for i in np.arange(len(psf_distorted) - len(result))]
-            for ext in np.arange(len(psf_distorted)):
-                result[ext] = psf_distorted[ext]
+        # Edit the variable to match if input didn't request distortion
+        # (cannot set result = psf_updated due to return method)
+        [result.append(fits.ImageHDU()) for i in np.arange(len(psf_updated) - len(result))]
+        for ext in np.arange(len(psf_updated)):
+            result[ext] = psf_updated[ext]
 
         # Rewrite result variable based on output_mode set:
         stpsf_core.SpaceTelescopeInstrument._calc_psf_format_output(self, result, options)
@@ -759,10 +768,10 @@ class WFI(RomanInstrument):
         path : string
             The path to the file containing detector aberrations.
         """
-        detectors = _load_wfi_detector_aberrations(path)
+        detectors_dict = _load_wfi_detector_aberrations(path)
         assert len(detectors.keys()) > 0
 
-        self._detectors = detectors
+        self._detectors = detectors_dict
         self._current_aberration_file = path
 
     def _validate_config(self, **kwargs):
