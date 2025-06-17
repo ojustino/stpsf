@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+import os
+import stpsf
 from stpsf import display_psf, roman
 
-#### Create stpsf-roman_page_header.png
+#### Create stpsf_roman_page_header.png
 long = 4
 wide = 3
 
@@ -37,7 +39,9 @@ for i, ifilter in enumerate(sorted(all_filters)):
 
 axes[-1].remove()
 
-# fig.savefig('stpsf-roman_page_header.png', dpi=100, facecolor='w')
+# fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+#                          'stpsf_roman_page_header.png'),
+#             dpi=100, facecolor='w')
 
 #### Create compare_wfi09_wfi17.png
 wfi2 = roman.WFI()
@@ -58,13 +62,17 @@ stpsf.display_psf(psf_wfi17, ax=ax_wfi17, imagecrop=2.0,
 stpsf.display_psf_difference(psf_wfi09, psf_wfi17, ax=ax_diff,
                                vmax=5e-3, title='WFI09 - WFI17', imagecrop=2.0)
 fig2.tight_layout(w_pad=.5)
-# fig2.savefig('compare_wfi09_wfi17.png', dpi=100, facecolor='w')
+# fig2.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+#                          'compare_wfi09_wfi17.png'),
+#              dpi=100, facecolor='w')
 
 
 #### Create fig_coronagraph_spc_f770.png
 cor = roman.RomanCoronagraph()
 cor.mode = "CHARSPC_F770"
 
-fig, ax = plt.subplots(figsize=(8,7))
+fig3, ax3 = plt.subplots(figsize=(8,7))
 mono_char_spc_psf = cor.calc_psf(nlambda=1, fov_arcsec=1.6, display=True)
-# fig.savefig('fig_coronagraph_spc_f770.png', dpi=100, facecolor='w')
+# fig3.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+#                          'fig_coronagraph_spc_f770.png'),
+#              dpi=100, facecolor='w')
