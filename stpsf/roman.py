@@ -475,8 +475,7 @@ class WFIPupilController:
     The pupil depends on pupil_mask, detector, and filter;
     pupil_mask is set automatically upon the receipt of the
     detector and filter values selected by the user in the WFI class.
-    The user should not interact with this class directly, only
-    through the API provided through the WFI class.
+    Users should only interact with through the API provided in the WFI class.
 
     Parameters
     ----------
@@ -543,8 +542,10 @@ class WFIPupilController:
         """
         wfi_filter = wfi_filter.upper()
 
-        # if wfi_filter in GRISM_FILTERS:
-        #     return 'GRISM'
+        if wfi_filter in GRISM_FILTERS:
+            # As of Cycle 10, GRISM0 and GRISM1 are the only filters that share
+            # a set of pupil masks with each other
+            return 'GRISM'
         # elif wfi_filter in PRISM_FILTERS:
         #     return 'PRISM'
         # elif wfi_filter in ['F184', 'F213']:
@@ -555,7 +556,9 @@ class WFIPupilController:
         #     # preceding cases to skinny
         #     return 'SKINNY'
 
-        return wfi_filter
+
+        else:
+            return wfi_filter
 
     def set_base_path(self, datapath):
         """
@@ -721,7 +724,9 @@ class WFI(RomanInstrument):
         self._pupil_controller = WFIPupilController(self._datapath)
 
         # self.pupil_mask_list = list(self._pupil_controller.pupil_file_formatters.keys())
-        self.pupil_mask_list = self.filter_list.copy()
+        self.pupil_mask_list = [fltr for fltr in self.filter_list.copy()
+                                if not fltr.startswith('GRISM')]
+        self.pupil_mask_list.append(np.str_('GRISM'))  # GRISM0/1 share pupils
 
         # Define default aberration files for WFI modes
         # self._aberration_files = {
@@ -788,6 +793,7 @@ class WFI(RomanInstrument):
         assert self.pupil is not None, 'pupil is None'
         super()._validate_config(**kwargs)
 
+    # DELETE THE FUNCTION BELOW; NO LONGER NEEDED
     def _get_filter_mode(self, wfi_filter):
         """
         Given a filter name, returns the WFI mode.
@@ -1073,14 +1079,14 @@ class WFI(RomanInstrument):
         pupil_path : string
             The custom path to your pupil file.
         """
-        # TEMP UNTIL NEW PUPIL FILES ARE IN PLACE
-        # if os.path.isfile(pupil_path):
-        if True:
+        # TEMP BELOW UNTIL NEW PUPIL FILES ARE IN PLACE
+        # if True:
+        if os.path.isfile(pupil_path):
             self._pupil_controller.lock_pupil(pupil_path)
         else:
-            pass
-            # TEMP UNTIL NEW PUPIL FILES ARE IN PLACE
-            # raise FileNotFoundError(f'{pupil_path} not found.')
+            raise FileNotFoundError(f'{pupil_path} not found.')
+            # TEMP BELOW UNTIL NEW PUPIL FILES ARE IN PLACE
+            # pass
 
         _log.warning('Disabling default pupil selection behavior.')
 

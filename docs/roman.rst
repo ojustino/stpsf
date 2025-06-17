@@ -171,14 +171,15 @@ As before, the Cycle 10 reference data release from the Goddard Space Flight
 Center features field-dependent pupil images for the WFI. However, this cycle's
 pupil images are categorized in a manner that diverges from that of previous cycles.
 
-For the first time, each WFI filter comes with its own set of field-dependent
-aberrations and pupil images. This eliminates the need to group filters into
-broader pupil masks as was done in previous releases. For example, in STPSF
-version 2.0.0, the F184 and F213 filters shared the `'Wide'` pupil mask. Both
-filters now have separate "F184" and "F213" pupil masks. The same is true for
-the shorter wavelength imaging filters, both grism orders, and the prism.
-(The prism mode operates without obstruction, so it is only assigned a
- "pupil mask" in STPSF for the sake of consistency with other optical elements.)
+For the first time, each WFI imaging filter comes with its own set of
+field-dependent aberrations and pupil images. This eliminates the need to group
+filters into broader pupil masks as was done in previous releases. For example,
+in STPSF version 2.0.0, the F184 and F213 filters shared the `'Wide'` pupil
+mask. Both filters now have separate "F184" and "F213" pupil masks. The same is
+true for the shorter wavelength imaging filters and the prism. (The prism mode
+operates without obstruction, so it is only assigned a "pupil mask" in STPSF
+for the sake of consistency with other optical elements.) The "GRISM0" and
+"GRISM1" filters still share a "GRISM" pupil mask.
 
 .. figure:: ./roman_figures/pupil_mask_by_detector.gif
    :alt: Pupil masks at different field points.
