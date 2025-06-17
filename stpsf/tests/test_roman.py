@@ -11,25 +11,16 @@ GRISM_FILTERS = roman.GRISM_FILTERS
 PRISM_FILTERS = roman.PRISM_FILTERS
 
 
-def detector_substr(detector):
-    """
-    change detector string to match file format
-    (e.g., "SCA01" -> "SCA_1")
-    """
-    return f'{detector[:3]}_{str(int((detector[3:])))}'
-
-
 def pupil_path(wfi, mask=None):
     """
     dynamically generate current pupil path for a given WFI instance
     """
-    mask = wfi._pupil_controller._get_filter_mask(wfi.filter) if mask is None else mask
-    detector = detector_substr(wfi.detector)
+    mask = wfi._pupil_controller._get_pupil_mask(wfi.filter) if mask is None else mask
 
     base = wfi._pupil_controller._pupil_basepath
-    file = wfi._pupil_controller.pupil_file_formatters[mask]
+    file = wfi._pupil_controller.pupil_file_formatter(mask, wfi.detector)
 
-    return os.path.join(base, file).format(detector)
+    return os.path.join(base, file)
 
 
 def test_WFI_psf():
@@ -45,8 +36,8 @@ def test_WFI_filters():
     wfi = roman.WFI()
     filter_list = wfi.filter_list
 
-    for filter in filter_list:
-        wfi.filter = filter
+    for fltr in filter_list:
+        wfi.filter = fltr
         wfi.calc_psf(fov_pixels=4, oversample=1, nlambda=3)
 
 
@@ -139,7 +130,7 @@ def test_WFI_pupil_controller():
         assert wfi._pupil_controller._auto_pupil_mask, 'Pupil mask is locked and should not be'
 
         # Test effect of changing the filter on pupil path
-        for filter in wfi.filter_list:
+        for fltr in wfi.filter_list:
             wfi.filter = fltr
 
             assert wfi.pupil == pupil_path(wfi), f'Pupil was not set to correct value for filter {fltr}'
@@ -214,8 +205,8 @@ def test_custom_aberrations():
     # -------------
     wfi.lock_aberrations(test_aberration_file)
 
-    for filter in wfi.filter_list:
-        wfi.filter = filter
+    for fltr in wfi.filter_list:
+        wfi.filter = fltr
         assert wfi._current_aberration_file == test_aberration_file, 'Filter change caused override to fail'
 
     # Test Release Override
@@ -277,12 +268,12 @@ def test_WFI_limits_interpolation_range():
         det.get_aberration_terms(max_wv), det.get_aberration_terms(too_hi_wv)
     ), 'Aberration above wavelength range did not return closest value.'
 
-    # Test border pixels outside the ref data. In Cycle 9, (0, 37) is the first
+    # Test border pixels outside the ref data. In Cycle 10, (32, 0) is the first
     # pixel, so we check if (0, 0) is approximated to it as the nearest point.
     det.field_position = (0, 0)
     coefficients_outlier = det.get_aberration_terms(valid_wv)
 
-    det.field_position = (0, 37)
+    det.field_position = (32, 0)
     coefficients_data = det.get_aberration_terms(valid_wv)
 
     assert np.allclose(coefficients_outlier, coefficients_data), (
