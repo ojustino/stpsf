@@ -187,10 +187,10 @@ def test_swapping_modes(wfi=None):
 
     tests = [
         # [filter, mode, pupil_file]
-        ['F146', 'imaging', pupil_path],
-        ['F213', 'imaging', pupil_path],
-        [PRISM_FILTERS[0], 'prism', pupil_path],
-        [GRISM_FILTERS[0], 'grism', pupil_path],
+        ['F146', 'F146', pupil_path],
+        ['F213', 'F213', pupil_path],
+        [PRISM_FILTERS[0], PRISM_FILTERS[0], pupil_path],
+        [GRISM_FILTERS[0], GRISM_FILTERS[0], pupil_path],
     ]
 
     for test_filter, test_mode, test_pupil in tests:
