@@ -218,11 +218,12 @@ def _load_wfi_detector_aberrations(filename):
 
     def build_detector_from_table(number, zernike_table):
         """Build a FieldDependentAberration optic for a detector using
-        Zernikes Z1-Z43 at various wavelengths and field points"""
+        Zernikes Z1-Z45 at various wavelengths and field points"""
         single_detector_info = zernike_table[zernike_table['sca'] == number]
         field_points = set(single_detector_info['field_point'])
         detector = FieldDependentAberration(
-            4096, 4096, radius=RomanInstrument.PUPIL_RADIUS, name=f"Field Dependent Aberration (WFI{number:02d})"
+            4096, 4096, radius=RomanInstrument.PUPIL_RADIUS,
+            name=f"Field Dependent Aberration (WFI{number:02d})"
         )
         for field_id in field_points:
             field_point_rows = single_detector_info[single_detector_info['field_point'] == field_id]
@@ -262,8 +263,8 @@ class _RomanInstrumentOptionsDict(dict):
     """
     A wrapper for the options dict that prevents the `add_distortion` key from
     being set to True or False since distortion can't be added to PSFs from
-    Roman WFI (they come pre-distorted) or the Coronagraph Instrument
-    (distortion not implemented).
+    Roman WFI (whose input data is already distorted) or the Coronagraph
+    Instrument (distortion not implemented).
     """
     def __setitem__(self, key, value):
         if key == 'add_distortion' and value != 'NA':
@@ -293,7 +294,8 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         self.options = _RomanInstrumentOptionsDict(self.options.copy())
 
         self.options['jitter'] = 'gaussian'
-        self.options['jitter_sigma'] = 0.012  # arcsec/axis, see https://roman.ipac.caltech.edu/page/param-db#telescope
+        self.options['jitter_sigma'] = 0.012
+        # arcsec/axis, see https://github.com/RomanSpaceTelescope/roman-technical-information/tree/main/data/Observatory/MissionandObservatoryTechnicalOverview#telescope-parameters
 
     def calc_psf(
         self,
@@ -475,7 +477,8 @@ class WFIPupilController:
     The pupil depends on pupil_mask, detector, and filter;
     pupil_mask is set automatically upon the receipt of the
     detector and filter values selected by the user in the WFI class.
-    Users should only interact with through the API provided in the WFI class.
+    Users should only interact with this class through the API provided
+    in the WFI class.
 
     Parameters
     ----------
@@ -585,16 +588,12 @@ class WFIPupilController:
         detector : string
             See WFI.detector_list for a list of valid detectors.
         """
-        if wfi_filter.upper().startswith(('F', 'W')):
-            # return f"RST_WIM_Filter_{wfi_filter}_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
+        if wfi_filter.upper().startswith('F'):
             return f"RST_WIM_Filter_{wfi_filter}_{detector}.fits.gz"
         elif wfi_filter.upper().startswith('GRISM'):
-            # STARTSWITH NOT NEEDED IF GRISM IS ONLY ONE ORDER NOW
-            # return f"RST_WSM_GRISM_grism_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
-            return f"RST_WSM_GRISM_grism_{detector}.fits.gz"
+            return f"RST_WSM_Grism_grism_{detector}.fits.gz"
         elif wfi_filter.upper() == 'PRISM':
-            # return f"RST_WSM_PRISM_prism_{detector[:3]}_{str(int(detector[3:]))}.fits" #.gz? old
-            return f"RST_WSM_PRISM_prism_{detector}.fits.gz"
+            return f"RST_WSM_Prism_prism_{detector}.fits.gz"
 
     def update_pupil(self, wfi_filter, detector):
         """
@@ -739,9 +738,8 @@ class WFI(RomanInstrument):
         self._aberration_files.update({
             fltr: os.path.join(
                 self._datapath,
-                (f"{'WIM' if fltr.startswith(('F', 'W')) else 'WSM'}"
+                (f"{'WIM' if fltr.startswith('F') else 'WSM'}"
                  f"_{fltr}_zernikes_cycle10.csv"))
-            # NEEDS MODIFICATION IF WE KEEP GRISM0/GRISM1 FILTER NAMES
             for fltr in self.filter_list
         })
 
