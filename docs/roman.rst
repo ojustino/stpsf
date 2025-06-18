@@ -23,10 +23,9 @@ Wide Field Instrument (WFI)
    scale in arcseconds, log-scaled intensity. Note that the prism and
    grism PSFs shown here are monochromatic.
 
-The WFI model is based on the
-`Cycle 10 instrument reference information <https://roman.gsfc.nasa.gov/science/Roman_Reference_Information.html>`_
+The WFI model is based on the Cycle 10 instrument reference information
 from the Roman team at Goddard Space Flight Center (GSFC).
-The reported jitter for the Roman observatory is 0.012 arcsec per axis, `per GSFC <https://roman.ipac.caltech.edu/page/param-db#telescope>`_.
+The `reported jitter for the Roman observatory <https://github.com/RomanSpaceTelescope/roman-technical-information/tree/main/data/Observatory/MissionandObservatoryTechnicalOverview#telescope-parameters>`_ is 0.012 arcsec per axis.
 
 .. note::
 
@@ -56,18 +55,16 @@ science cases of interest.
    *Tutorial notebook for Roman*
 
    This documentation is complemented by an
-   `IPython Notebook tutorial for Roman PSFs <http://nbviewer.ipython.org/github/spacetelescope/stpsf/blob/stable/notebooks/STPSF-Roman_Tutorial.ipynb>`_.
+   `IPython Notebook tutorial for Roman PSFs <https://github.com/spacetelescope/stpsf/blob/develop/notebooks/STPSF-Roman_Tutorial.ipynb>`_.
    Download the notebook to interactively explore code examples of common tasks
    and try a beta notebook GUI for the WFI model.
 
 
 .. caution::
 
-  As of STPSF 2.1, the Roman WFI's Zernike coefficients are evaluated from a
-  computed wavefront map with all apertures removed from the optical model.
-  They are defined on a 90 mm circle at the exit pupil. As such, they are
-  already distorted, so **Roman WFI PSFs are distorted by default.** This
-  distortion cannot be removed.
+  As of STPSF 2.1, the pupil images from which the WFI model simulates PSFs
+  include distortion effects. As such, **Roman WFI PSFs are distorted by
+  default.** This distortion cannot be removed.
 
 
 .. caution::
@@ -121,13 +118,15 @@ The reference information available gives the field dependent aberrations in
 terms of Zernike polynomial coefficients from :math:`Z_1` to :math:`Z_{45}`.
 These coefficients were calculated for five field points on each of 18
 detectors, providing coverage from 0.76 :math:`\mu m` to 2.3 :math:`\mu m`
-(the WFI's entire wavelength range). STPSF interpolates the coefficients in position and wavelength space to allow users to simulate PSFs at any valid
+(the WFI's entire wavelength range). STPSF interpolates the coefficients in
+position and wavelength space to allow users to simulate PSFs at any valid
 pixel position and wavelength. STPSF approximates the aberrations for an
 out-of-range detector position by using the nearest field point.
 
 Bear in mind that setting a pixel position does not automatically set the
 **centering** of a calculated PSF. As with other models in STPSF, specify
-'even' (center on crosshairs between four pixels) or 'odd' (center on pixel center) parity through the ``options`` dictionary. ::
+'even' (centered on crosshairs between four pixels) or 'odd'
+(centered on pixel center) parity through the ``options`` dictionary. ::
 
    >>> wfi.options['parity'] = 'even'  # best case for dividing PSF core flux
    >>> wfi.options['parity'] = 'odd'  # worst case for PSF core flux landing in a single pixel
