@@ -261,10 +261,14 @@ def _load_wfi_detector_aberrations(filename):
 
 class _RomanInstrumentOptionsDict(dict):
     """
-    A wrapper for the options dict that prevents the `add_distortion` key from
-    being set to True or False since distortion can't be added to PSFs from
-    Roman WFI (whose input data is already distorted) or the Coronagraph
-    Instrument (distortion not implemented).
+    A wrapper for the `RomanInstrument.options` dict that prevents the
+    `add_distortion` key from being modified since distortion can't be added to
+    PSFs from Roman's WFI (whose input data is already distorted) or Coronagraph
+    Instrument (where distortion is not implemented).
+
+    The default value set for `add_distortion` in `RomanInstrument` should be
+    something other than True or False that indicates to users that distortion
+    can't be toggled in the Roman instrument model.
     """
     def __setitem__(self, key, value):
         if key == 'add_distortion' and value != 'NA':
@@ -290,7 +294,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         # reassign self.options from dict to _RomanInstrumentOptionsDict,
         # mainly to prevent user modification of the add_distortion key
-        self.options['add_distortion'] = 'NA'  # distortion is always on
+        self.options['add_distortion'] = 'NA'  # distortion can't be toggled
         self.options = _RomanInstrumentOptionsDict(self.options.copy())
 
         self.options['jitter'] = 'gaussian'
@@ -444,9 +448,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         Modifies the 'result' HDUList object.
 
         """
-        # Set up new extensions to which apply detector charge transfer model
-        _log.info('Adding PSF detector effects. add_distortion disabled for Roman.')
-
+        # Set up new extensions for detector charge transfer model
         n_exts = len(result)
         for ext in np.arange(n_exts):
             hdu_new = fits.ImageHDU(result[ext].data, result[ext].header)
@@ -772,7 +774,7 @@ class WFI(RomanInstrument):
             The path to the file containing detector aberrations.
         """
         detectors_dict = _load_wfi_detector_aberrations(path)
-        assert len(detectors.keys()) > 0
+        assert len(detectors_dict.keys()) > 0
 
         self._detectors = detectors_dict
         self._current_aberration_file = path
