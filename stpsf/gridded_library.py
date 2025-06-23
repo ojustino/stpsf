@@ -171,12 +171,12 @@ class CreatePSFLibrary:
         self.location_list = self._set_psf_locations(num_psfs, psf_location, psf_location_list)
 
         # Set PSF attributes for the 3 kwargs that will be used before the calc_psf() call
-        if 'add_distortion' in kwargs:
+        if 'add_distortion' in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = kwargs['add_distortion']
-
-        else:
+        elif instrument.telescope != 'Roman':
             self.add_distortion = True
             kwargs['add_distortion'] = self.add_distortion
+        # (distortion is disabled for Roman instruments, so omit otherwise)
 
         if 'oversample' in kwargs:
             self.oversample = kwargs['oversample']
@@ -278,18 +278,19 @@ class CreatePSFLibrary:
         1 per instrument/filter/ detector). Also saves the library file(s) if requested.
 
         """
+        add_distortion = getattr(self, 'add_distortion', False)
 
         # Set output mode and extension to use
         if self.use_detsampled_psf is True:
             self.webb.options['output_mode'] = 'Detector sampled image'
             self.oversample = 1
-            if self.add_distortion:
+            if add_distortion:
                 ext = 'DET_DIST'
             else:
                 ext = 'DET_SAMP'
         elif self.use_detsampled_psf is False:
             self.webb.options['output_mode'] = 'Oversampled image'
-            if self.add_distortion:
+            if add_distortion:
                 ext = 'OVERDIST'
             else:
                 ext = 'OVERSAMP'
@@ -341,7 +342,7 @@ class CreatePSFLibrary:
                 psf[ext].data = astropy.convolution.convolve(psf[ext].data, kernel)
 
                 # Convolve PSF with a model for interpixel capacitance
-                if self.add_distortion and add_ipc_gridded:
+                if add_distortion and add_ipc_gridded:
                     stpsf.detectors.apply_detector_ipc(psf, extname=ext)
                     self.webb.options['add_ipc'] = True  # restore the user's value for the IPC option
 
@@ -392,7 +393,7 @@ class CreatePSFLibrary:
             meta['NUM_PSFS'] = (self.num_psfs, 'The total number of fiducial PSFs')
 
             # Distortion information
-            if self.add_distortion:
+            if add_distortion:
                 meta['DISTORT'] = (psf[ext].header['DISTORT'], 'SIAF distortion coefficients applied')
                 meta['SIAF_VER'] = (psf[ext].header['SIAF_VER'], 'SIAF PRD version used')
 
