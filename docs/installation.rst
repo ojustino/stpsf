@@ -62,7 +62,7 @@ STPSF will now **automatically download and install these files** the first time
 
 *If you would like to place the data files at some other location*,  you can manually install the data files yourself.
 
-1. Download the following file:  `stpsf-data-LATEST.tar.gz <https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz>`_  [approx. 70 MB]
+1. Download the following file:  `stpsf-data-LATEST.tar.gz <https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz>`_  [approx. 175 MB]
 2. Untar ``stpsf-data-LATEST.tar.gz`` into a directory of your choosing.
 3. Set the environment variable ``STPSF_PATH`` to point to that directory. e.g. ::
 
