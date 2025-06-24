@@ -34,7 +34,8 @@ including its Wide Field Instrument and a preliminary version of the Coronagraph
 
 .. note::
 
-   The current Roman WFI optical model was provided by Goddard Space Flight Center circa 2021 (the Cycle 9 reference data); a new optical model is currently being implemented in STPSF.
+   The current (Cycle 10) Roman WFI optical model was calculated by Goddard
+   Space Flight Center in September 2024.
 
 Documentation can be found online at https://stpsf.readthedocs.io
 
