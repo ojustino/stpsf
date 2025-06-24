@@ -173,7 +173,10 @@ class CreatePSFLibrary:
         # Set PSF attributes for the 3 kwargs that will be used before the calc_psf() call
         if 'add_distortion' in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = kwargs['add_distortion']
-        elif instrument.telescope != 'Roman':
+        if 'add_distortion' in kwargs and instrument.telescope == 'Roman':
+            raise ValueError("add_distortion disabled for Roman PSFs. "
+                             "Please remove this argument and try again.")
+        elif 'add_distortion' not in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = True
             kwargs['add_distortion'] = self.add_distortion
         # (distortion is disabled for Roman instruments, so omit otherwise)

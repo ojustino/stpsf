@@ -316,6 +316,7 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         save_intermediates=False,
         return_intermediates=False,
         normalize='first',
+        add_distortion=None,
         crop_psf=False,
     ):
         """
@@ -329,11 +330,19 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         Parameters
         ----------
+        add_distortion : None
+            Included for backward compatibility, but, as mentioned earlier,
+            distortion can no longer be toggled in WFI PSFs. Including this
+            argument now triggers an error asking for its removal.
         crop_psf : bool
             Included for API compatibility with the JWST instrument classes,
             but has no effect on the results for Roman WFI PSF calculations.
 
         """
+
+        if add_distortion is not None:
+            raise ValueError("add_distortion disabled for Roman PSFs. "
+                             "Please remove this argument and try again.")
 
         # Save new keyword to the options dictionary
         self.options['crop_psf'] = crop_psf
