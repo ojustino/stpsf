@@ -1,3 +1,4 @@
+import logging
 import itertools
 import os
 from collections import OrderedDict
@@ -10,6 +11,8 @@ from astropy.nddata import NDData
 from photutils.psf import GriddedPSFModel
 
 import stpsf.detectors
+
+_log = logging.getLogger('stpsf')
 
 
 class CreatePSFLibrary:
@@ -174,12 +177,14 @@ class CreatePSFLibrary:
         if 'add_distortion' in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = kwargs['add_distortion']
         if 'add_distortion' in kwargs and instrument.telescope == 'Roman':
-            raise ValueError("add_distortion disabled for Roman PSFs. "
-                             "Please remove this argument and try again.")
+            _log.warn('Note that the add_distortion argument no longer affects '
+                      'Roman instrument simulations. All WFI PSFs natively '
+                      'include distortion effects and all RomanCoronagraph '
+                      'PSFs do not.')
         elif 'add_distortion' not in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = True
             kwargs['add_distortion'] = self.add_distortion
-        # (distortion is disabled for Roman instruments, so omit otherwise)
+        # (distortion isn't recommended for Roman sims, so omit otherwise)
 
         if 'oversample' in kwargs:
             self.oversample = kwargs['oversample']

@@ -232,10 +232,10 @@ def apply_detector_charge_diffusion(psf_hdulist, options):
     """
 
     sigma = options.get('charge_diffusion_sigma')
+    inst = psf_hdulist[0].header['INSTRUME'].upper()
 
     if sigma is None:
         # look up default from constants
-        inst = psf_hdulist[0].header['INSTRUME'].upper()
         key = f"NIRCAM_{psf_hdulist[0].header['CHANNEL'][0]}W" if inst == 'NIRCAM' else inst
         sigma = stpsf.constants.INSTRUMENT_DETECTOR_CHARGE_DIFFUSION_DEFAULT_PARAMETERS[key]
 

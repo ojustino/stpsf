@@ -271,7 +271,7 @@ class _RomanInstrumentOptionsDict(dict):
     """
     def __setitem__(self, key, value):
         if key == 'add_distortion' and value != 'NA':
-            _log.warn('WFI: add_distortion disabled for Roman PSFs')
+            _log.warn('Roman: add_distortion disabled for Roman PSFs')
         else:
             super().__setitem__(key, value)
 
@@ -324,16 +324,17 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         Note that Roman WFI PSFs, unlike those from the JWST instruments,
         always include distortion. Additionally, distortion is not implemented
-        in STPSF for the Roman Coronagraph Instrument. As such, the Roman
-        implementation of `calc_psf()` does not include an `add_distortion`
-        argument.
+        in STPSF for the Roman Coronagraph Instrument. As such, the
+        `add_distortion` argument of the Roman implementation of `calc_psf()`
+        will not affect the simulated PSF.
 
         Parameters
         ----------
         add_distortion : None
-            Included for backward compatibility, but, as mentioned earlier,
-            distortion can no longer be toggled in WFI PSFs. Including this
-            argument now triggers an error asking for its removal.
+            Included for backward compatibility, but this argument has no
+            effect since, as mentioned above, distortion can no longer be
+            toggled in Roman PSFs. WFI PSFs natively include distortion effects
+            and RomanCoronagraph PSFs do not.
         crop_psf : bool
             Included for API compatibility with the JWST instrument classes,
             but has no effect on the results for Roman WFI PSF calculations.
@@ -341,8 +342,10 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
         """
 
         if add_distortion is not None:
-            raise ValueError("add_distortion disabled for Roman PSFs. "
-                             "Please remove this argument and try again.")
+            _log.warn('Note that the add_distortion argument no longer affects '
+                      'Roman instrument simulations. All WFI PSFs natively '
+                      'include distortion effects and all RomanCoronagraph '
+                      'PSFs do not.')
 
         # Save new keyword to the options dictionary
         self.options['crop_psf'] = crop_psf
