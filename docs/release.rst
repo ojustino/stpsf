@@ -48,6 +48,7 @@ Releasing new data packages
     #. update minimal in the ci setup (``stpsf/.github/workflows/download_data.yml``) (this also shouldn't need to change as the box link is for latest)
     #. update ``stpsf/stpsf/__init__.py`` with version number  (DATA_VERSION_MIN)
     #. CITATIONS.cff with new version
+#. Add box link for new version numbers to installation.rst under `Using Specific Data Versions`
 #. Generate the release notes
     #. You can do a draft release on github to autogenerate the relnotes
     #. In github set new release to be pre-release and make a release candidate tag -  1.3.0.rc1
@@ -83,10 +84,10 @@ Releasing new data packages
     #. test that you can download and install in fresh env (have pypi as backup for libraries that aren't on testpypi):
         #. ``$ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ stpsf==<VERSION>``
 #. Tag a version in develop and push it to git (do it through local terminal, not through website)
-    #. ``$ git tag -a <release-tag> -m “webbpsf v1.4.0”`` (<release-tag> is just the version number --> 1.4.0)
+    #. ``$ git tag -a <release-tag> -m “stpsf v1.4.0”`` (<release-tag> is just the version number --> 1.4.0)
     #. ``$ git push upstream <release-tag>``
 #. Go to stable branch, and look at where it says how many commits behind it is from develop. Click that to generate a pull request (do not squash when you merge here)
-#. When tests pass merge them to stable
+#. When tests pass merge them to stable and to a new branch named `V<Version Number>`
 #. Release on Github:
     #. On Github, click on ``[N] Releases``
     #. Select ``Draft a new release``.
