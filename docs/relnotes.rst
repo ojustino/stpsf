@@ -33,7 +33,7 @@ The updated Roman reference files introduce
 a) Zernike coefficients specific to each filter for modeling wavefront error,
 b) throughputs specific to each filter *and* detector, and
 c) pupil masks specific to each of the imaging and prism filters. (The zeroth and first order grism filters continue to share a pupil mask.)
-The `add_distortion` flag is now disabled for Roman simulations since our input pupil masks natively include distortion effects.
+The `add_distortion` flag now has no effect on Roman simulations since our input WFI pupil masks natively include distortion effects.
 
 **What's Changed**
 * release 2.0.0 by @BradleySappington in https://github.com/spacetelescope/stpsf/pull/48
