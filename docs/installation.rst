@@ -122,3 +122,19 @@ To install the current development version of STPSF, you can use ``pip`` to inst
 This will create directories ``./src/poppy`` and ``./src/stpsf`` in your current directory containing the cloned repository. If you have commit access to the repository, you may want to clone via ssh with a URL like ``git+ssh://git@github.com:spacetelescope/stpsf.git``. Documentation of the available options for installing directly from Git can be found in the `pip documentation <http://pip.readthedocs.org/en/latest/reference/pip_install.html#git>`_.
 
 Remember to :ref:`install the required data files <data_install>`, if you have not already installed them.
+
+.. _specific_versions:
+
+Using Specific Data Versions
+--------------------------------
+
+If you need a specific version of the STPSF data you can download it directly
+
+| Full Versions:
+| `stpsf-data-2.1.0.tar.gz <https://stsci.box.com/shared/static/ybp9cupdgxicsn3yj7p9ru9ivuyzcyfw.gz>`_
+| `stpsf-data-2.0.0.tar.gz <https://stsci.box.com/shared/static/i3ui9gfypnhmu5ocec47ooci2ehwf9xf.gz>`_
+
+
+| Min Versions:
+| `minimal-stpsf-data-2.1.0.tar.gz <https://stsci.box.com/shared/static/z4wt613tg9txgfo5gc4qkvco1jzg74xe.gz>`_
+| `minimal-stpsf-data-2.0.0.tar.gz <https://stsci.box.com/shared/static/4f0jrt20l1tagsmz9s3juxfacu4kgigm.gz>`_

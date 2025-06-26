@@ -63,6 +63,7 @@ The `add_distortion` flag now has no effect on Roman simulations since our input
 * tweak/enhance auto data install by @mperrin in https://github.com/spacetelescope/stpsf/pull/50
 * #98 - Reference issue in SUR.xmltext() by @kulpster85 in https://github.com/spacetelescope/stpsf/pull/99
 * Roman Cycle 10 Updates by @ojustino in https://github.com/spacetelescope/stpsf/pull/100
+* Re-enable add_distortion argument for Roman @ojustino in https://github.com/spacetelescope/stpsf/pull/104
 
 **Full Changelog**: https://github.com/spacetelescope/stpsf/compare/2.0.0...2.1.0
 
