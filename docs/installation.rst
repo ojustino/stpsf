@@ -129,10 +129,14 @@ Using Specific Data Versions
 --------------------------------
 
 If you need a specific version of the STPSF data you can download it directly
+
 Full Versions:
+
 `stpsf-data-2.1.0.tar.gz <https://stsci.box.com/shared/static/ybp9cupdgxicsn3yj7p9ru9ivuyzcyfw.gz>`_
 `stpsf-data-2.0.0.tar.gz <https://stsci.box.com/shared/static/i3ui9gfypnhmu5ocec47ooci2ehwf9xf.gz>`_
 
+
 Min Versions:
+
 `minimal-stpsf-data-2.1.0.tar.gz <https://stsci.box.com/shared/static/z4wt613tg9txgfo5gc4qkvco1jzg74xe.gz>`_
 `minimal-stpsf-data-2.0.0.tar.gz <https://stsci.box.com/shared/static/4f0jrt20l1tagsmz9s3juxfacu4kgigm.gz>`_
