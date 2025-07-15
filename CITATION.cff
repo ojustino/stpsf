@@ -77,6 +77,18 @@ references:
     authors:
       - given-names: Marshall D.
         family-names: Perrin
+      - given-names: Anand
+        family-names: Sivaramakrishnan
+      - given-names: Charles-Philippe
+        family-names: Lajoie
+      - given-names: Erin
+        family-names: Elliott
+      - given-names: Laurent
+        family-names: Pueyo
+      - given-names: Swara
+        family-names: Ravindranath
+      - given-names: Loïc
+        family-names: Albert
     title: "Simulating point spread functions for the James Webb Space Telescope with WebbPSF"
     journal: "Proc. SPIE"
     volume: 9143
@@ -88,14 +100,14 @@ references:
     authors:
       - given-names: Marshall D.
         family-names: Perrin
-      - given-names: John
-        family-names: Krist
-      - given-names: Louis
-        family-names: Lubow
-      - given-names: Jeffrey
-        family-names: Valenti
-      - given-names: Daniel
-        family-names: Makidon
+      - given-names: Rémi
+        family-names: Soummer
+      - given-names: Erin M.
+        family-names: Elliott
+      - given-names: Matthew D.
+        family-names: Lallo
+      - given-names: Anand
+        family-names: Sivaramakrishnan
     title: "Updated point spread function simulations for JWST with WebbPSF"
     journal: "Proc. SPIE"
     volume: 8442
