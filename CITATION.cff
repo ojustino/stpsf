@@ -72,4 +72,33 @@ abstract: >-
   Coronagraph Instrument.
 license: BSD-3-Clause
 version: 2.1.0
+references:
+  - type: article
+    authors:
+      - given-names: Marshall D.
+        family-names: Perrin
+    title: "Simulating point spread functions for the James Webb Space Telescope with WebbPSF"
+    journal: "Proc. SPIE"
+    volume: 9143
+    year: 2014
+    doi: 10.1117/12.2056689
+    url: https://doi.org/10.1117/12.2056689
 
+  - type: article
+    authors:
+      - given-names: Marshall D.
+        family-names: Perrin
+      - given-names: John
+        family-names: Krist
+      - given-names: Louis
+        family-names: Lubow
+      - given-names: Jeffrey
+        family-names: Valenti
+      - given-names: Daniel
+        family-names: Makidon
+    title: "Updated point spread function simulations for JWST with WebbPSF"
+    journal: "Proc. SPIE"
+    volume: 8442
+    year: 2012
+    doi: 10.1117/12.925230
+    url: https://doi.org/10.1117/12.925230
