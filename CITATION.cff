@@ -7,7 +7,6 @@ message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
-doi: 10.5281/zenodo.15747364
 authors:
   - given-names: Marshall
     family-names: Perrin
@@ -54,18 +53,23 @@ authors:
     family-names: Chambers
   - given-names: Alden
     family-names: Jurling
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.15747364
 repository-code: 'https://github.com/spacetelescope/stpsf'
+url: 'https://github.com/spacetelescope/stpsf'
 abstract: >-
   STPSF produces simulated PSFs for the James Webb Space
-  Telescope, NASA's flagship infrared space telescope.
-  STPSF can simulate images for any of the four science
+  Telescope, NASA's flagship infrared space telescope. STPSF
+  can simulate images for any of the four science
   instruments plus the fine guidance sensor, including both
   direct imaging, coronagraphic, and spectroscopic modes.
 
 
-  STPSF also supports simulating PSFs for the upcoming
-  Nancy Grace Roman Space Telescope (formerly WFIRST),
-  including its Wide Field Instrument and a preliminary
-  version of the Coronagraph Instrument.
-license: "BSD-3-Clause"
+  STPSF also supports simulating PSFs for the upcoming Nancy
+  Grace Roman Space Telescope (formerly WFIRST), including
+  its Wide Field Instrument and a preliminary version of the
+  Coronagraph Instrument.
+license: BSD-3-Clause
 version: 2.1.0
+
