@@ -68,3 +68,6 @@ abstract: >-
   version of the Coronagraph Instrument.
 license: "BSD-3-Clause"
 version: 2.1.0
+identifiers:
+  - type: "doi"
+    value: "10.5281/zenodo.15747364"
