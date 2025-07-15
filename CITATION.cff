@@ -89,7 +89,7 @@ references:
         family-names: Ravindranath
       - given-names: Loïc
         family-names: Albert
-    title: "Simulating point spread functions for the James Webb Space Telescope with WebbPSF"
+    title: "Updated point spread function simulations for JWST with WebbPSF"
     journal: "Proc. SPIE"
     volume: 9143
     year: 2014
@@ -108,7 +108,7 @@ references:
         family-names: Lallo
       - given-names: Anand
         family-names: Sivaramakrishnan
-    title: "Updated point spread function simulations for JWST with WebbPSF"
+    title: "Simulating point spread functions for the James Webb Space Telescope with WebbPSF"
     journal: "Proc. SPIE"
     volume: 8442
     year: 2012
