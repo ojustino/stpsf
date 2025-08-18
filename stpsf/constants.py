@@ -409,3 +409,22 @@ INSTRUMENT_IFU_BROADENING_PARAMETERS = {
     'NIRSPEC': {'sigma': 0.05},
     'MIRI': {'sigma': 0.05},
 }
+
+# Information about the effects on WFE of the IEC thermal variations
+#
+# Table of value for IEC telemetry to WFE model. Coefficients from model fit by Randal Telfer
+# Method as in Telfer et al. 2024 Proc. SPIE
+# Model Amp and Lag values from an updated fit to more data, delivered by email from Telfer to Perrin & Melendez on 2024 Nov 25
+# T_mean values from time average semi-arbitrarily over all of 2024 January; this is mostly just a convenience cache
+# to avoid having to recompute T_mean each time, and to ensure a mean over a suitably long time period
+iec_mnemonics = (
+    # Mnemonic       Model_amp   Lag     T_mean
+    #                [RMS nm/K]  [min]   [K]
+    ('ST_ZTC1FGSIA', 1.425,      0.027,  280.706933),
+    ('ST_ZTC2FGSIA', 3.327,     -0.075,  280.420823),
+    ('ST_ZTC1MIRIA', 0.593,      1.148,  280.642024),
+    ('ST_ZTC2NRCDA', 0.472,     -0.037,  280.433027),
+    ('ST_ZTC3NRCDA', 2.530,     -0.084,  280.821185),
+    # uncertainties in amplitude are ± 0.039 - 0.106 nm/K
+    # uncertainties in lag are ± 0.075 - 0.109 min
+)
