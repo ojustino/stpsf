@@ -644,10 +644,12 @@ def query_wfsc_images_by_program(prog, obs, detector='NRCA3', productlevel=3):
     return tab
 
 
-def query_wfsc_images_latest(detector='NRCA3', productlevel=3):
+def query_wfsc_images_latest(detector='NRCA1', productlevel='2b'):
     """MAST query to get filenames of the most recent WFSC images
 
     Returns table of MAST query results
+
+    As of cycle 4, this is looking for NRCA1_FP6 aperture using detector NRCA1, and undithered exposures (level 2b)
     """
     # Query MAST for the most recent level-3 WFSC combined products
     now = astropy.time.Time.now()
