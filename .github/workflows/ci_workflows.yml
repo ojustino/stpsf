@@ -4,9 +4,7 @@ on: [push, pull_request]
 
 jobs:
   retrieve_cache:
-    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@098e3d3515d906bbfa12680d2282ec8d6726527b  # v1.5.2
-    with:
-      minimal: true
+    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@68bfa1fe978b05c892672e715f0666ecf999d32f  # v2.1.1
   tests:
     needs: [ retrieve_cache ]
     name: ${{ matrix.name }}
