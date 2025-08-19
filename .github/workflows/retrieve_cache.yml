@@ -54,6 +54,9 @@ jobs:
         run: |
           PREFIX="stpsf-data-${{ inputs.dataset_type }}-"
 
+          # use actions/gh-actions-cache to allow filtering by key
+          gh extension install actions/gh-actions-cache
+
           # Find the most recent cache key matching dataset type
           CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} --key "$PREFIX" --sort created-at | cut -f1 | head -n1)
 
