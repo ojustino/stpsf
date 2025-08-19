@@ -27,39 +27,58 @@
 #          key: ${{ needs.stpsf_data_cache_key.outputs.cache_key }}
 #       ...
 
-name: retrieve latest prerelease data cache key
+name: retrieve latest STPSF data cache key
 
 on:
   workflow_call:
+    inputs:
+      dataset_type:
+        description: Which dataset to retrieve (prerel or full)
+        type: string
+        required: true
+        default: prerel
     outputs:
       version:
-        value: ${{ jobs.retrieve_latest_cache_key.outputs.version }}
+        value: ${{ jobs.retrieve.outputs.version }}
       cache_path:
-        value: ${{ jobs.retrieve_latest_cache_key.outputs.cache_path }}
+        value: ${{ jobs.retrieve.outputs.cache_path }}
       cache_key:
-        value: ${{ jobs.retrieve_latest_cache_key.outputs.cache_key }}
+        value: ${{ jobs.retrieve.outputs.cache_key }}
+
+permissions:
+  actions: read
+  contents: read
 
 jobs:
-  retrieve_latest_cache_key:
-    name: retrieve latest prerelease STPSF data cache key
+  retrieve:
+    name: retrieve latest STPSF ${{ inputs.dataset_type }} data cache key
     runs-on: ubuntu-latest
     steps:
-      - name: retrieve latest prerelease data cache key
-        id: latest_cache_key
-        run: |
-          gh extension install actions/gh-actions-cache
-          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} \
-            --key stpsf-data-prerel- \
-            --sort created-at | cut -f 1 | head -n 1)
-          if [ -z "$CACHE_KEY" ]; then exit 1; fi
-          echo cache_key=$CACHE_KEY >> $GITHUB_OUTPUT
+      - name: Install gh actions-cache extension
+        run: gh extension install actions/gh-actions-cache || true
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - run: echo "Latest cache key: ${{ steps.latest_cache_key.outputs.cache_key }}"
+      - name: Find latest cache key
+        id: latest_cache_key
+        run: |
+          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} \
+            --key stpsf-data-${{ inputs.dataset_type }}- \
+            --sort created-at | cut -f 1 | head -n 1)
+          if [ -z "$CACHE_KEY" ]; then
+            echo "No cache found for dataset_type=${{ inputs.dataset_type }}" >&2
+            exit 1
+          fi
+          echo "cache_key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-      - id: version
-        run: echo "version=$(echo ${{ steps.latest_cache_key.outputs.cache_key }} | awk -F '-' '{print $4}')" >> $GITHUB_OUTPUT
+      - name: Derive version from key
+        id: version
+        run: |
+          KEY="${{ steps.latest_cache_key.outputs.cache_key }}"
+          VERSION="${KEY#stpsf-data-${{ inputs.dataset_type }}-}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
     outputs:
       version: ${{ steps.version.outputs.version }}

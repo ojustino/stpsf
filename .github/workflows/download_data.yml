@@ -1,6 +1,6 @@
 # Downloads STPSF dataset and caches it to GitHub cache,
 # making a new cache for a new data version
-# the cache key is in the form `stpsf-data-mini-1.3.0`,
+# the cache key is in the form
 # `stpsf-data-full-1.3.0`, `stpsf-data-prerel-1.3.1` etc.
 #
 # To provide your own test workflow with the STPSF dataset,
@@ -22,10 +22,16 @@
 #     with:
 #       minimal: true
 
-name: download and cache prerelease data
+name: download and cache STPSF data
 
 on:
   workflow_call:
+    inputs:
+      dataset_type:
+        description: Which dataset to download and cache (prerel or full)
+        type: string
+        required: true
+        default: prerel
     outputs:
       version:
         value: ${{ jobs.download.outputs.version }}
@@ -34,7 +40,14 @@ on:
       cache_key:
         value: ${{ jobs.download.outputs.cache_key }}
 
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:
+    inputs:
+      dataset_type:
+        description: Which dataset to download and cache (prerel or full)
+        type: string
+        required: true
+        default: prerel
+
   schedule:
     - cron: "0 0 * * 0"   # weekly
   release:
@@ -43,15 +56,28 @@ on:
       - develop
 
 env:
-  PRE_RELEASE_URL: https://stsci.box.com/shared/static/50i1h17hij7r3pki8zmaxsh8o7pyqj79.gz
+  PREREL_URL: https://stsci.box.com/shared/static/50i1h17hij7r3pki8zmaxsh8o7pyqj79.gz
+  FULL_URL: https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz
 
 jobs:
   download:
-    name: download and cache latest development (prerelease) STPSF data
+    name: download and cache STPSF ${{ inputs.dataset_type }} data
     runs-on: ubuntu-latest
     steps:
-      - name: Download prerelease dataset
-        run: wget ${{ env.PRE_RELEASE_URL }} -O ${{ runner.temp }}/stpsf-data.tar.gz
+      - name: Select dataset URL
+        id: dataset_url
+        run: |
+          if [ "${{ inputs.dataset_type }}" = "prerel" ]; then
+            echo "url=${{ env.PREREL_URL }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.dataset_type }}" = "full" ]; then
+            echo "url=${{ env.FULL_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported dataset_type: ${{ inputs.dataset_type }}" >&2
+            exit 1
+          fi
+
+      - name: Download dataset
+        run: wget ${{ steps.dataset_url.outputs.url }} -O ${{ runner.temp }}/stpsf-data.tar.gz
 
       - name: Extract dataset
         run: |
@@ -65,7 +91,7 @@ jobs:
         run: echo "version=$(cat ${{ steps.cache_path.outputs.cache_path }}/stpsf-data/version.txt)" >> $GITHUB_OUTPUT
 
       - id: cache_key
-        run: echo "cache_key=stpsf-data-prerel-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+        run: echo "cache_key=stpsf-data-${{ inputs.dataset_type }}-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Save cache
         uses: actions/cache@v4
@@ -77,4 +103,3 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       cache_path: ${{ steps.cache_path.outputs.cache_path }}
       cache_key: ${{ steps.cache_key.outputs.cache_key }}
-

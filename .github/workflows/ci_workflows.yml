@@ -4,7 +4,9 @@ on: [push, pull_request]
 
 jobs:
   retrieve_cache:
-    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@68bfa1fe978b05c892672e715f0666ecf999d32f  # v2.1.1
+    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@68bfa1fe978b05c892672e715f0666ecf999d32f  # v2.1.1 - prerelease implementation
+    with:
+      dataset_type: prerel   # or "full"
   tests:
     needs: [ retrieve_cache ]
     name: ${{ matrix.name }}
@@ -13,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-
           - name: Coverage test in Python 3
             os: ubuntu-latest
             python: '3.11'
