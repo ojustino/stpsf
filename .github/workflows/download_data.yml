@@ -66,13 +66,17 @@ jobs:
     steps:
       - name: Select dataset URL
         id: dataset_url
+        env:
+          DATASET_TYPE: ${{ inputs.dataset_type }}
+          PRERELEASE_URL: ${{ env.PRERELEASE_URL }}
+          LATEST_RELEASE_URL: ${{ env.LATEST_RELEASE_URL }}
         run: |
-          if [ "${{ inputs.dataset_type }}" = "development" ]; then
-            echo "url=${{ env.PRERELEASE_URL }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.dataset_type }}" = "latest_release" ]; then
-            echo "url=${{ env.LATEST_RELEASE_URL }}" >> $GITHUB_OUTPUT
+          if [ "$DATASET_TYPE" = "development" ]; then
+            echo "url=$PRERELEASE_URL" >> $GITHUB_OUTPUT
+          elif [ "$DATASET_TYPE" = "latest_release" ]; then
+            echo "url=$LATEST_RELEASE_URL" >> $GITHUB_OUTPUT
           else
-            echo "Unsupported dataset_type: ${{ inputs.dataset_type }}" >&2
+            echo "Unsupported dataset_type: $DATASET_TYPE" >&2
             exit 1
           fi
 
@@ -85,13 +89,20 @@ jobs:
           tar -xzvf ${{ runner.temp }}/stpsf-data.tar.gz -C ${{ runner.temp }}/data/
 
       - id: cache_path
-        run: echo "cache_path=${{ runner.temp }}/data/" >> $GITHUB_OUTPUT
+        env:
+          DATA_PATH: ${{ runner.temp }}/data/
+        run: echo "cache_path=$DATA_PATH" >> $GITHUB_OUTPUT
 
       - id: version
-        run: echo "version=$(cat ${{ steps.cache_path.outputs.cache_path }}/stpsf-data/version.txt)" >> $GITHUB_OUTPUT
+        env:
+          DATA_PATH: ${{ steps.cache_path.outputs.cache_path }}
+        run: echo "version=$(cat $DATA_PATH/stpsf-data/version.txt)" >> $GITHUB_OUTPUT
 
       - id: cache_key
-        run: echo "cache_key=stpsf-data-${{ inputs.dataset_type }}-${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+        env:
+          DATASET_TYPE: ${{ inputs.dataset_type }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: echo "cache_key=stpsf-data-$DATASET_TYPE-$VERSION" >> $GITHUB_OUTPUT
 
       - name: Save cache
         uses: actions/cache@v4
