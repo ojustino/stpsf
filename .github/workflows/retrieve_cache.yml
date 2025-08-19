@@ -77,3 +77,7 @@ jobs:
           echo "version=${{ steps.cache-key.outputs.version }}" >> $GITHUB_OUTPUT
           echo "cache_path=${{ steps.cache-key.outputs.cache_path }}" >> $GITHUB_OUTPUT
 
+    outputs:
+      cache_path: ${{ steps.set-outputs.outputs.cache_path }}
+      cache_key: ${{ steps.set-outputs.outputs.cache_key }}
+      version: ${{ steps.set-outputs.outputs.version }}
