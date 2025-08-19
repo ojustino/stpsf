@@ -48,10 +48,6 @@ on:
 jobs:
   retrieve:
     runs-on: ubuntu-latest
-    outputs:
-      cache_path: ${{ steps.set-outputs.outputs.cache_path }}
-      cache_key: ${{ steps.set-outputs.outputs.cache_key }}
-      version: ${{ steps.set-outputs.outputs.version }}
     steps:
       - name: Determine cache key
         id: cache-key
