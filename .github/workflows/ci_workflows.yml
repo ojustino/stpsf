@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   retrieve_cache:
-    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@68bfa1fe978b05c892672e715f0666ecf999d32f  # v2.1.1 - prerelease implementation
+    uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@main
     with:
-      dataset_type: prerel   # or "full"
+      dataset_type: development   # or latest_release
   tests:
     needs: [ retrieve_cache ]
     name: ${{ matrix.name }}

@@ -27,61 +27,53 @@
 #          key: ${{ needs.stpsf_data_cache_key.outputs.cache_key }}
 #       ...
 
-name: retrieve latest STPSF data cache key
+name: retrieve cache
 
 on:
   workflow_call:
     inputs:
       dataset_type:
-        description: Which dataset to retrieve (prerel or full)
+        description: "Choose dataset type ('development' or 'latest_release')"
         type: string
-        required: true
-        default: prerel
+        required: false
+        default: development
     outputs:
-      version:
-        value: ${{ jobs.retrieve.outputs.version }}
       cache_path:
         value: ${{ jobs.retrieve.outputs.cache_path }}
       cache_key:
         value: ${{ jobs.retrieve.outputs.cache_key }}
-
-permissions:
-  actions: read
-  contents: read
+      version:
+        value: ${{ jobs.retrieve.outputs.version }}
 
 jobs:
   retrieve:
-    name: retrieve latest STPSF ${{ inputs.dataset_type }} data cache key
     runs-on: ubuntu-latest
-    steps:
-      - name: Install gh actions-cache extension
-        run: gh extension install actions/gh-actions-cache || true
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Find latest cache key
-        id: latest_cache_key
-        run: |
-          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} \
-            --key stpsf-data-${{ inputs.dataset_type }}- \
-            --sort created-at | cut -f 1 | head -n 1)
-          if [ -z "$CACHE_KEY" ]; then
-            echo "No cache found for dataset_type=${{ inputs.dataset_type }}" >&2
-            exit 1
-          fi
-          echo "cache_key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Derive version from key
-        id: version
-        run: |
-          KEY="${{ steps.latest_cache_key.outputs.cache_key }}"
-          VERSION="${KEY#stpsf-data-${{ inputs.dataset_type }}-}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      cache_path: ${{ runner.temp }}/data/
-      cache_key: ${{ steps.latest_cache_key.outputs.cache_key }}
+      cache_path: ${{ steps.set-outputs.outputs.cache_path }}
+      cache_key: ${{ steps.set-outputs.outputs.cache_key }}
+      version: ${{ steps.set-outputs.outputs.version }}
+    steps:
+      - name: Determine cache key
+        id: cache-key
+        run: |
+          PREFIX="stpsf-data-${{ inputs.dataset_type }}-"
+
+          # Find the most recent cache key matching dataset type
+          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} --key "$PREFIX" --sort created-at | cut -f1 | head -n1)
+
+          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
+
+          # Extract version (suffix after prefix, if present)
+          VERSION=${CACHE_KEY#"$PREFIX"}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Path where cache would be restored
+          echo "cache_path=/tmp/stpsf-cache/$CACHE_KEY" >> $GITHUB_OUTPUT
+
+      - name: Set outputs
+        id: set-outputs
+        run: |
+          echo "cache_key=${{ steps.cache-key.outputs.cache_key }}" >> $GITHUB_OUTPUT
+          echo "version=${{ steps.cache-key.outputs.version }}" >> $GITHUB_OUTPUT
+          echo "cache_path=${{ steps.cache-key.outputs.cache_path }}" >> $GITHUB_OUTPUT
 

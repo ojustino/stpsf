@@ -28,10 +28,10 @@ on:
   workflow_call:
     inputs:
       dataset_type:
-        description: Which dataset to download and cache (prerel or full)
+        description: "Choose dataset type ('development' or 'latest_release')"
         type: string
-        required: true
-        default: prerel
+        required: false
+        default: development
     outputs:
       version:
         value: ${{ jobs.download.outputs.version }}
@@ -43,10 +43,10 @@ on:
   workflow_dispatch:
     inputs:
       dataset_type:
-        description: Which dataset to download and cache (prerel or full)
+        description: Which dataset type ('development' or 'latest_release')"
         type: string
-        required: true
-        default: prerel
+        required: false
+        default: development
 
   schedule:
     - cron: "0 0 * * 0"   # weekly
@@ -56,8 +56,8 @@ on:
       - develop
 
 env:
-  PREREL_URL: https://stsci.box.com/shared/static/50i1h17hij7r3pki8zmaxsh8o7pyqj79.gz
-  FULL_URL: https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz
+  PRERELEASE_URL: https://stsci.box.com/shared/static/50i1h17hij7r3pki8zmaxsh8o7pyqj79.gz
+  LATEST_RELEASE_URL: https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz
 
 jobs:
   download:
@@ -67,10 +67,10 @@ jobs:
       - name: Select dataset URL
         id: dataset_url
         run: |
-          if [ "${{ inputs.dataset_type }}" = "prerel" ]; then
-            echo "url=${{ env.PREREL_URL }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.dataset_type }}" = "full" ]; then
-            echo "url=${{ env.FULL_URL }}" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.dataset_type }}" = "development" ]; then
+            echo "url=${{ env.PRERELEASE_URL }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.dataset_type }}" = "latest_release" ]; then
+            echo "url=${{ env.LATEST_RELEASE_URL }}" >> $GITHUB_OUTPUT
           else
             echo "Unsupported dataset_type: ${{ inputs.dataset_type }}" >&2
             exit 1
