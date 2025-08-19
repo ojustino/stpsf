@@ -1,31 +1,35 @@
-# retrieves the latest cache key for STPSF data;
-# the cache key is in the form `stpsf-data-mini-1.3.0`,
-# `stpsf-data-full-1.3.0`, `stpsf-data-prerel-1.3.1` etc.
+# retrieves the latest cache for STPSF data;
+# the cache key is in the form `stpsf-data-development-1.3.1`
+# or `stpsf-data-latest_release-1.3.0` depending on the dataset_type.
 #
-# to retrieve the STPSF data cache in your test workflow,
-# first create a cache of the dataset in your repository
-# (see `download_data.yml` for instructions), then
-# call this workflow as a needed job and use `actions/cache/restore`
-# to place the data in your test job:
+# to retrieve the STPSF data cache in your test workflow:
+# 1. Ensure the dataset cache exists in your repository
+#    (see `download_data.yml` for instructions).
+# 2. Call this workflow as a dependent job and use `actions/cache@v4`
+#    to restore the dataset into your test job.
+#
+# Example usage in a workflow:
 #
 # # .github/workflows/tests.yml
 # name: run tests
 # ...
 # jobs:
-#   stpsf_data_cache_key:
-#     uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@beda656c80a0254e6f80649d9c9c49235634522f  # v1.4.0
+#   stpsf_data_cache:
+#     uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@<commit-or-tag>
 #     with:
-#       minimal: true
+#       dataset_type: development   # or latest_release
 #   tests:
-#     needs: [ stpsf_data_cache_key ]
+#     needs: [ stpsf_data_cache ]
 #     steps:
+#       - name: Retrieve STPSF data cache
+#         uses: actions/cache@v4
+#         with:
+#           path: ${{ runner.temp }}/stpsf-data
+#           key: ${{ needs.stpsf_data_cache.outputs.cache_key }}
+#       - name: Set STPSF data path
+#         run: echo "STPSF_PATH=${{ needs.stpsf_data_cache.outputs.cache_path }}/stpsf-data" >> $GITHUB_ENV
 #       ...
-#       - name: retrieve STPSF data cache
-#        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
-#        with:
-#          path: ${{ runner.temp }}/stpsf-data
-#          key: ${{ needs.stpsf_data_cache_key.outputs.cache_key }}
-#       ...
+
 
 name: retrieve cache
 
@@ -49,34 +53,43 @@ jobs:
   retrieve:
     runs-on: ubuntu-latest
     steps:
-      - name: Determine cache key
-        id: cache-key
+      - name: Set dataset URLs
+        id: dataset_url
         run: |
-          PREFIX="stpsf-data-${{ inputs.dataset_type }}-"
+          if [ "${{ inputs.dataset_type }}" = "development" ]; then
+            echo "url=https://stsci.box.com/shared/static/50i1h17hij7r3pki8zmaxsh8o7pyqj79.gz" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.dataset_type }}" = "latest_release" ]; then
+            echo "url=https://stsci.box.com/shared/static/kqfolg2bfzqc4mjkgmujo06d3iaymahv.gz" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported dataset_type: ${{ inputs.dataset_type }}" >&2
+            exit 1
+          fi
 
-          # use actions/gh-actions-cache to allow filtering by key
-          gh extension install actions/gh-actions-cache
+      - name: Download dataset if cache does not exist
+        id: download
+        run: |
+          DATA_PATH="${{ runner.temp }}/data-${{ inputs.dataset_type }}"
+          mkdir -p "$DATA_PATH"
 
-          # Find the most recent cache key matching dataset type
-          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} --key "$PREFIX" --sort created-at | cut -f1 | head -n1)
+          # If version.txt exists in cache path, skip download
+          if [ ! -f "$DATA_PATH/stpsf-data/version.txt" ]; then
+            wget "${{ steps.dataset_url.outputs.url }}" -O "${{ runner.temp }}/stpsf-data.tar.gz"
+            tar -xzvf "${{ runner.temp }}/stpsf-data.tar.gz" -C "$DATA_PATH"
+          fi
 
-          echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
-
-          # Extract version (suffix after prefix, if present)
-          VERSION=${CACHE_KEY#"$PREFIX"}
+          echo "cache_path=$DATA_PATH" >> $GITHUB_OUTPUT
+          VERSION=$(cat "$DATA_PATH/stpsf-data/version.txt")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "cache_key=stpsf-data-${{ inputs.dataset_type }}-$VERSION" >> $GITHUB_OUTPUT
 
-          # Path where cache would be restored
-          echo "cache_path=/tmp/stpsf-cache/$CACHE_KEY" >> $GITHUB_OUTPUT
-
-      - name: Set outputs
-        id: set-outputs
-        run: |
-          echo "cache_key=${{ steps.cache-key.outputs.cache_key }}" >> $GITHUB_OUTPUT
-          echo "version=${{ steps.cache-key.outputs.version }}" >> $GITHUB_OUTPUT
-          echo "cache_path=${{ steps.cache-key.outputs.cache_path }}" >> $GITHUB_OUTPUT
+      - name: Restore or save cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.download.outputs.cache_path }}
+          key: ${{ steps.download.outputs.cache_key }}
 
     outputs:
-      cache_path: ${{ steps.set-outputs.outputs.cache_path }}
-      cache_key: ${{ steps.set-outputs.outputs.cache_key }}
-      version: ${{ steps.set-outputs.outputs.version }}
+      cache_path: ${{ steps.download.outputs.cache_path }}
+      cache_key: ${{ steps.download.outputs.cache_key }}
+      version: ${{ steps.download.outputs.version }}
+

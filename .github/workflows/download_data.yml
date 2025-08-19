@@ -43,10 +43,11 @@ on:
   workflow_dispatch:
     inputs:
       dataset_type:
-        description: Which dataset type ('development' or 'latest_release')"
+        description: "Which dataset type ('development' or 'latest_release')"
         type: string
         required: false
         default: development
+
 
   schedule:
     - cron: "0 0 * * 0"   # weekly
