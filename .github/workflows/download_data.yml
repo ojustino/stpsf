@@ -68,7 +68,7 @@ jobs:
       - name: Select dataset URL
         id: dataset_url
         env:
-          DATASET_TYPE: ${{ inputs.dataset_type }}
+          DATASET_TYPE: ${{ inputs.dataset_type || github.event.inputs.dataset_type || 'development' }}
           PRERELEASE_URL: ${{ env.PRERELEASE_URL }}
           LATEST_RELEASE_URL: ${{ env.LATEST_RELEASE_URL }}
         run: |
