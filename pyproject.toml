@@ -44,6 +44,9 @@ docs = [
     "sphinx-issues",
     "tomli; python_version <\"3.11\"",
 ]
+jwst = [
+    "jwst",
+]
 
 [project.urls]
 Homepage = "http://stpsf.readthedocs.io/"
