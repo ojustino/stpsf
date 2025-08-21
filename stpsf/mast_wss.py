@@ -896,6 +896,7 @@ def retrieve_iec_heater_telemetry(tstart, tend, plot=False):
 
 
     if plot:
+        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(16,4))
 
         for mnemonic, *other_vals in stpsf.constants.iec_mnemonics:

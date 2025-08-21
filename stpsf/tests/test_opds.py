@@ -664,7 +664,7 @@ def test_iec_wfe_model():
 
     # Test calling the interpolator function with a single time as a string
     time_test = '2025-07-25T12:00:00'   # This time happens to have iec_coeff right around -2
-    iec_coeff = stpsf.opds.estimate_iec_induced_wfe_at_time(time_test)
+    iec_coeff = stpsf.opds.estimate_iec_induced_wfe_at_time(time_test, plot=True)   # also test here the plot option in that function in mast_wss
     assert np.isclose(iec_coeff, -2, rtol=0.01)
 
     ote.apply_iec_drift(iec_coeff)
