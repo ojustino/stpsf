@@ -864,3 +864,51 @@ def query_program_visit_times(program, verbose=False):
 
     # visit_times = np.asarray(visit_times)
     return astropy.table.Table([vids, starts, ends], names=('visit_id', 'start_mjd', 'end_mjd'))
+
+# Functions for retrieving telemetry about observatory wavefront variations, in particular the IEC thermal oscillations
+
+@functools.lru_cache
+def retrieve_iec_heater_telemetry(tstart, tend, plot=False):
+    """Retrieve JWST Instrument Electronics Compartment (IEC) heater telemetry, for use in de-trending WFSC
+
+    Parameters
+    ----------
+    tstart, tstop : strings
+        Datetimes for start and stop of time range
+
+    plot : bool
+
+    Make a plot, for test or debugging purposes.
+
+
+    """
+    import stpsf.constants
+
+    from jwst.lib.engdb_tools import ENGDB_Service
+    engdb_service = ENGDB_Service()  # By default, will use the public MAST service.
+
+    iecvals = {}
+
+    for mnemonic, amp, lag, t_mean in stpsf.constants.iec_mnemonics:
+        times, values = engdb_service.get_values(mnemonic, tstart, tend, include_obstime=True, zip_results=False)
+        if len(times)== 0:
+            raise RuntimeError(f"Found no results for {mnemonic} between {tstart} - {tend}")
+        times = astropy.time.Time([v.value for v in times])   # Convert from list of Times to one Time with an ndarray of values.
+        iecvals[mnemonic] = times, np.asarray(values)
+
+
+    if plot:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(16,4))
+
+        for mnemonic, *other_vals in stpsf.constants.iec_mnemonics:
+            times, values = iecvals[mnemonic]
+            ax.plot(times.plot_date, values, label=mnemonic)
+        ax.legend()
+
+        ax.xaxis.axis_date()
+
+        ax.set_ylabel("Temp [K]")
+        ax.set_xlabel("Time [UTC]")
+        fig.tight_layout()
+    return iecvals
