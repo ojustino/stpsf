@@ -184,7 +184,7 @@ def wavefront_time_series_plot(
 
     ax.set_xlim(start_date.plot_date, end_date.plot_date)
 
-    if end_date - start_date < 365:
+    if end_date - start_date < 365*u.day:
         ax.xaxis.set_major_locator(matplotlib.dates.WeekdayLocator(interval=1))
         ax.xaxis.set_minor_locator(matplotlib.dates.DayLocator())
     else:
