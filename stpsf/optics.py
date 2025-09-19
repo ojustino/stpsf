@@ -11,6 +11,7 @@ import poppy.utils
 from astropy.table import Table
 from scipy.interpolate import RegularGridInterpolator, griddata
 from scipy.ndimage import rotate
+from scipy.ndimage import zoom
 
 from . import constants, utils, stpsf_core
 
@@ -1408,11 +1409,13 @@ class WebbFieldDependentAberration(poppy.OpticalElement):
                 # to 1024
                 self.amplitude = self.amplitude[256: 256 + 1024, 256: 256 + 1024]
             elif self.instrument.name == 'MIRI':
-                self.amplitude = fits.getdata(
+                amplitude_nominal = fits.getdata(
                     os.path.join(
                         utils.get_stpsf_data_path(), 'MIRI', 'optics', 'MIRI_tricontagon_oversized_rotated.fits.gz'
                     )
                 )
+                # this will adjust the amplitude size according to the opd size
+                self.amplitude = zoom(amplitude_nominal, npix / 1024)
 
             else:
                 # internal pupil is a 4 percent oversized circumscribing circle?
