@@ -1415,7 +1415,7 @@ class WebbFieldDependentAberration(poppy.OpticalElement):
                     )
                 )
                 # this will adjust the amplitude size according to the opd size
-                self.amplitude = zoom(amplitude_nominal, npix / 1024)
+                self.amplitude = amplitude_nominal if npix==1024 else zoom(amplitude_nominal, npix / 1024)
 
             else:
                 # internal pupil is a 4 percent oversized circumscribing circle?
