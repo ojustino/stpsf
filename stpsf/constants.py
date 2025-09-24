@@ -375,6 +375,8 @@ JWST_INSCRIBED_DIAMETER = 5.47334  # meters. Middle corners of C segments
 
 JWST_TYPICAL_LOS_JITTER_PER_AXIS = 0.0008  # milliarcseconds jitter, 1 sigma per axis. = approx 1 mas rms radial, typically
 
+ROMAN_TYPICAL_LOS_JITTER_PER_AXIS = 0.0060  # milliarcseconds jitter, 1 sigma per axis. See https://github.com/spacetelescope/stpsf/issues/111
+                                            # This is a representative predicted average. "The requirement of 8mas is exceeded in under 1% of the present simulations"
 
 # ad hoc, highly simplified models for charge diffusion within detectors
 # These values are PLACEHOLDERS and should be updated based on comparisons with data and ePSFs (ongoing)
