@@ -1539,6 +1539,7 @@ def monthly_trending_plot(year, month, verbose=True, instrument='NIRCam', filter
                 ls='--',
                 alpha=0.5,
             )
+            cp.set_in_layout(False)  # avoid display layout bug: don't consider the connectionpatches for layout
             fig.add_artist(cp)
 
         else:
