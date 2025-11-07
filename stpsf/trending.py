@@ -706,6 +706,7 @@ def single_measurement_trending_plot(
         diff2_title = 'post-move - reference'
         delta_opd2 = post_opd - ref_opd
         delta_opd2[~mask] = np.nan
+        delta_opd2 -= np.nanmedian(delta_opd2)  # ensure it's zero mean
 
         # infer the correction ID
         # based on the assumption that the move probably came from the immediately prior WSS session
