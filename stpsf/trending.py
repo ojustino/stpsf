@@ -718,7 +718,7 @@ def single_measurement_trending_plot(
         if not os.path.exists(sur_fn):
             # check for slight differences in SUR fn
             import glob
-            try_sur_fns = glob.glob('?'+sur_fn[1:7]+"*.xml")
+            try_sur_fns = glob.glob('?'+sur_fn[1:7]+"*_sur.xml")
             if len(try_sur_fns) == 1:
                 print(f"Found {try_sur_fns[0]} as SUR filename, instead of {sur_fn} based on prior correction ID")
                 sur_fn = try_sur_fns[0]
