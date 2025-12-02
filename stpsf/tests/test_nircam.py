@@ -158,6 +158,11 @@ def do_test_nircam_blc(clobber=False, kind='circular', angle=0, save=False, disp
         else:
             raise ValueError("Don't know how to check fluxes for angle={0}".format(angle))
 
+    # we also verify that the SI WFE has been flipped in the Y axis in this case, as needed for NIRCam coronagraphy
+    osys = nc.get_optical_system()
+    si_wfe = osys.planes[-2]
+    assert si_wfe._is_OPD_flipped_for_NRC_coron, "The SI OPD model derived from Zemax should be flipped in this case"
+
     # If you change either of the following, the expected flux values will need to be updated:
     nlam = 1
     oversample = 4
@@ -323,6 +328,11 @@ def test_nircam_coron_unocculted(plot=False):
 
     # This test just verifies that calc_psf() runs without error
     nc.calc_psf(monochromatic=2.12e-6)
+
+    # we also verify that the SI WFE has been flipped in the Y axis in this case, as needed for NIRCam coronagraphy
+    osys = nc.get_optical_system()
+    si_wfe = osys.planes[-2]
+    assert si_wfe._is_OPD_flipped_for_NRC_coron, "The SI OPD model derived from Zemax should be flipped in this case"
 
 
 def test_defocus(fov_arcsec=1, display=False):
