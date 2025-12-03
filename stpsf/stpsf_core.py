@@ -1657,12 +1657,12 @@ class JWInstrument(SpaceTelescopeInstrument):
             point, not the OTE global at master chief ray, since it is the OTE WFE at the selected field point
             which is most of use for some other tool.
         use_exact_wss_target_phase : bool
-            WebbPSF contains two versions of the model for the NIRCam "target phase map" at field point 1 (FP1),
-            i.e. the wavefront error inherent in the instrument at a given field point, that the wavefront control
+            STPSF contains two versions of the model for the NIRCam "target phase map" at field points 1 and 6 (FP1, FP6),
+            i.e. the wavefront error inherent in the instrument at a given sensing field point, that the wavefront control
             should not include. This switch allows toggling between the two. For trending functions that may compare
-            directly to analyses results from the JWSS WSS, it's beneficial to use precisely the same map for FP1
+            directly to analyses results from the JWSS WSS, it's beneficial to use precisely the same map for FP1/FP6
             as is used by the JWST WSS. However for typical PSF calculations it may be better to use the standard
-            WebbPSF model, since that's more consistent with that used in other field points.
+            STPSF model, since that's more consistent with that used in other field points.
 
         """
         # We use the size of the user supplied name of the JWST pupil in order to create the matching size OPD
