@@ -468,10 +468,10 @@ def test_nircam_coron_wfe_offset(fov_pix=15, oversample=2, fit_gaussian=True):
             yloc.append(xvals[yvals == yvals.max()][0])
     yloc = np.array(yloc)
 
-    # Difference from 2.5 to 3.3 um should be ~0.025mm
+    # Difference from 2.5 to 3.3 um should be ~0.025mm. Updated to ~0.030 mm in PR #125 based on SI WFE model updates
     diff_25_33 = np.abs(yloc[0] - yloc[1])
     assert np.allclose(
-        diff_25_33, 0.025, rtol=rtol
+        diff_25_33, 0.030, rtol=rtol
     ), 'PSF shift between {:.2f} and {:.2f} um of {:.3f} mm does not match expected value (~0.025 mm).'.format(
         warr[1], warr[0], diff_25_33
     )
