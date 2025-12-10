@@ -1434,6 +1434,15 @@ class WebbFieldDependentAberration(poppy.OpticalElement):
             self.opd = poppy.zernike.opd_from_zernikes(coeffs, npix=npix, outside=0)
             self.amplitude = (self.opd != 0).astype(int)
 
+        # Special case for NIRCam coronagraphy: we need to flip the OPD model in the Y axis.
+        #   In this case we are using a lookup table of Zernike coefficients derived from Zemax models
+        #   and it has been empirically determined that there seems to be a coordinate system inconsistency
+        #   in that. Flipping that vertically in the Y axis results in model PSFs that better match
+        #   observed coronagraphic PSFs.
+        if is_nrc_coron:
+            self.opd = self.opd[::-1]
+            self._is_OPD_flipped_for_NRC_coron = True
+
     def header_keywords(self):
         """Return info we would like to save in FITS header of output PSFs"""
         from collections import OrderedDict
