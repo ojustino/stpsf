@@ -87,8 +87,10 @@ def mast_wss_opds_around_date_query(date, verbose=True):
 
     # Set date range (units of days) for the query
     # Note: start with a small value (+-1.5 day) so the MAST query doesn't start off too large
-    # This is consistent with expected WFS cadence
-    tdelta = TimeDelta(1.5 * u.day, format='jd')
+    # This is consistent with expected WFS cadence.
+    # Increase to +- 3 days after 2024 Dec, when the WFS cadence changed to every 4 days
+    drange = 1.5 if date < Time('2024-12-01') else 3
+    tdelta = TimeDelta(drange * u.day, format='jd')
 
     # With a too-small date range, this initial query may return a "NoResultsWarning"
     obs_table = mast_wss_date_query(date, tdelta)
