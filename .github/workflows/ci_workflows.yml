@@ -30,10 +30,10 @@ jobs:
             python: '3.10'
             toxenv: py310-astropydev-test
 
-          - name: Try latest versions of all dependencies
+          - name: Test with Python 3.11
             os: ubuntu-latest
             python: '3.11'
-            toxenv: py311-latest-test
+            toxenv: py311-test
 
           - name: Try minimum supported versions
             os: ubuntu-latest
@@ -72,14 +72,8 @@ jobs:
     - name: Check conda info
       run: conda info
 
-    - name: Run tests with requirements file
-      if: ${{ contains(matrix.toxenv,'-latest') }}
-      run: |
-        cp requirements.txt ${{ runner.temp }}
-        tox -e ${{ matrix.toxenv }}
-
     - name: Run tests
-      if: ${{ matrix.continue-on-error == null && contains(matrix.toxenv,'-latest') != true }}
+      if: ${{ matrix.continue-on-error == null }}
       run: tox -e ${{ matrix.toxenv }}
 
     - name: Run tests and allow failures
