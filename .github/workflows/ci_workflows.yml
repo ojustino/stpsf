@@ -58,7 +58,7 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: Install Python dependencies
-      run: pip install tox tox-conda>=0.2
+      run: pip install tox tox-conda>=0.2 tox-uv
 
     - name: Get STPSF Data
       uses: actions/cache@v4  # v4.0.2
