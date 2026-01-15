@@ -36,11 +36,12 @@ test = [
 ]
 docs = [
     "nbsphinx",
+    "pandoc",
     "sphinx",
-    "stsci_rtd_theme",
     "sphinx-astropy",
     "sphinx-automodapi",
     "sphinx-issues",
+    "stsci_rtd_theme",
     "tomli; python_version <\"3.11\"",
 ]
 jwst = [
