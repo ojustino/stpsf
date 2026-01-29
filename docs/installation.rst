@@ -84,6 +84,8 @@ You should now be able to successfully ``import stpsf`` in a Python session.
       export STPSF_PATH="/grp/stpsf/stpsf-data"
       export PYSYN_CDBS="/grp/hst/cdbs"
 
+   Note that this setting causes problems for saving downloaded OPDs, so this is no longer recommended for most STScI user
+
 Software Requirements
 ---------------------
 
