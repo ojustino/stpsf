@@ -31,9 +31,8 @@ jobs:
       conda: true
       envs: |
         - linux: py310-test-legacy
-        - linux: py310-test
-        - linux: py311-test
-        - linux: py312-test
         - linux: py313-test-cov
         - linux: py313-test-astropydev
         - linux: py313-test-poppydev-pysiafdev
+      fill: true
+      fill_factors: test
