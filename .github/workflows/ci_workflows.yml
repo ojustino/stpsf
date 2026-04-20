@@ -10,7 +10,6 @@ jobs:
   check:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
     with:
-      conda: true
       envs: |
         - name: Check for Sphinx doc build errors
           linux: py311-docbuild
@@ -28,7 +27,6 @@ jobs:
         STPSF_PATH: ${{ needs.retrieve_cache.outputs.cache_path }}/stpsf-data/
       cache-path: ${{ needs.retrieve_cache.outputs.cache_path }}
       cache-key: ${{ needs.retrieve_cache.outputs.cache_key }}
-      conda: true
       envs: |
         - linux: py310-test-legacy
         - linux: py313-test-cov
