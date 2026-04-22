@@ -28,9 +28,13 @@ jobs:
       cache-path: ${{ needs.retrieve_cache.outputs.cache_path }}
       cache-key: ${{ needs.retrieve_cache.outputs.cache_key }}
       envs: |
-        - linux: py310-test-legacy
-        - linux: py313-test-cov
-        - linux: py313-test-astropydev
-        - linux: py313-test-poppydev-pysiafdev
+        - name: Try minimum supported versions
+          linux: py310-test-legacy
+        - name: Coverage test in Python 3
+          linux: py313-test-cov
+        - name: Try Astropy development version
+          linux: py313-test-astropydev
+        - name: Try latest versions of all dependencies
+          linux: py313-test-poppydev-pysiafdev
       fill: true
       fill_factors: test
