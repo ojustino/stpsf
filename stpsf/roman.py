@@ -11,6 +11,7 @@ WARNING: This model has not yet been validated against other PSF
 import logging
 import os.path
 import pprint
+import re
 from pathlib import Path
 
 import astropy.units as u
@@ -35,7 +36,7 @@ class WavelengthDependenceInterpolator(object):
     points
     """
 
-    def __init__(self, n_wavelengths=16, n_zernikes=22):
+    def __init__(self, n_wavelengths=16, n_zernikes=45):
         self._n_wavelengths = n_wavelengths
         self._n_zernikes = n_zernikes
         self._aberration_terms = np.zeros((n_wavelengths, n_zernikes), dtype=np.float64)
@@ -217,7 +218,10 @@ def _load_wfi_detector_aberrations(filename):
 
     def build_detector_from_table(number, zernike_table):
         """Build a FieldDependentAberration optic for a detector using
-        Zernikes Z1-Z45 at various wavelengths and field points"""
+        number of Zernike terms found per row (Z1-Z45 by default) for
+        specified wavelengths and field points"""
+        n_zernikes = len([c for c in zernike_table.columns
+                          if re.match(r'Z\d+', c)])
         single_detector_info = zernike_table[zernike_table['sca'] == number]
         field_points = set(single_detector_info['field_point'])
         detector = FieldDependentAberration(
@@ -227,7 +231,8 @@ def _load_wfi_detector_aberrations(filename):
         for field_id in field_points:
             field_point_rows = single_detector_info[single_detector_info['field_point'] == field_id]
             local_x, local_y = field_point_rows[0]['local_x'], field_point_rows[0]['local_y']
-            interpolator = build_wavelength_dependence(field_point_rows)
+            interpolator = build_wavelength_dependence(field_point_rows,
+                                                       n_zernikes)
 
             midpoint_pixel = 4096 / 2
             # (local_x in mm / 10 um pixel size) -> * 1e2
@@ -238,15 +243,17 @@ def _load_wfi_detector_aberrations(filename):
             detector.add_field_point(pixx, pixy, interpolator)
         return detector
 
-    def build_wavelength_dependence(rows):
-        """Build an interpolator object that interpolates Z1-Z22 in
-        wavelength space"""
+    def build_wavelength_dependence(rows, n_zernikes):
+        """Build an interpolator object that interpolates `n_zernikes` Zernike
+        terms in wavelength space"""
         wavelengths = set(rows['wavelength'])
-        interpolator = WavelengthDependenceInterpolator(n_wavelengths=len(wavelengths), n_zernikes=22)
+        interpolator = WavelengthDependenceInterpolator(
+            n_wavelengths=len(wavelengths),
+            n_zernikes=n_zernikes
+        )
         for row in rows:
-            z = np.zeros(22)
-            for idx in range(22):
-                z[idx] = row['Z{}'.format(idx + 1)]
+            z = np.array([row['Z{}'.format(idx + 1)]
+                          for idx in range(n_zernikes)])
             interpolator.set_aberration_terms(row['wavelength'] * 1e-6, z)
 
         return interpolator
