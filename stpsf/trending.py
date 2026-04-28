@@ -2415,8 +2415,8 @@ def display_wfs_visit(visitid=None, wl='WLM8', overwrite=False, save=True, verbo
     norm_sw = matplotlib.colors.AsinhNorm(vmin=0, vmax=1e4, linear_width=2)
     norm_lw = matplotlib.colors.AsinhNorm(vmin=0, vmax=1e2, linear_width=.2)
 
-    axes[0].imshow(combined_nrca, norm=norm_sw, cmap=cmap)
-    axes[1].imshow(lw_hdul['SCI'].data, norm=norm_lw, cmap=cmap)
+    axes[0].imshow(combined_nrca, norm=norm_sw, cmap=cmap, origin='lower')
+    axes[1].imshow(lw_hdul['SCI'].data, norm=norm_lw, cmap=cmap, origin='lower')
     axes[0].text(0.03, 0.97, 'NRC A SW\nF212N, WLM8',
                  transform=axes[0].transAxes, verticalalignment='top', color='yellow',
                 fontsize='large', fontweight='bold')
