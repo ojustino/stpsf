@@ -750,6 +750,12 @@ def get_visit_nrc_ta_image(visitid, verbose=True, kind='cal'):
 
     if verbose:
         print(f'TA filename: {filename}')
+    return get_mast_filename(filename)
+
+def get_mast_filename(filename):
+    """ Retrieve a specified file from MAST
+    Returns a FITS HDUList object in memory, without writing to disk
+    """
     mast_file_url = f'https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/{filename}'
     import urllib
 

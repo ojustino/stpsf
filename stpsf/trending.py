@@ -1,6 +1,7 @@
 import calendar
 import functools
 import os
+import glob
 
 import astropy
 import astropy.io.fits as fits
@@ -2293,3 +2294,157 @@ def nrc_ta_image_comparison(visitid, verbose=False, show_centroids=False):
     outname = f'nrc_ta_comparison_{visitid}.pdf'
     plt.savefig(outname)
     print(f' => {outname}')
+
+
+def display_wfs_visit(visitid=None, wl='WLM8', overwrite=False, save=True, verbose=True):
+    """Display a big-picture view of the data from a given WFS visit, including both SW and LW
+
+	Parameters
+	----------
+	visitid : string or None
+		either a visit ID, like "V01234005006", or None.
+        If None, then the most recent WFS visit will be displayed.
+	wl : string
+		Which weak lens image to display in the SW channel. Should be either 'WLM8' or 'WLP8'
+        or 'both' to plot both WLM8 and WLP8
+	save : bool
+		Save plot as a PDF?
+	overwrite : bool
+		If plot file already exists, shoult it be overwritten?
+	verbose : bool
+		Be more verbose in text output?
+    """
+
+
+    if visitid is None:
+        # get most recent visit ID
+        visitid = stpsf.mast_wss.retrieve_mast_opd_table()[-1]['visitId']
+        print(f"Most recent WFS visit was {visitid}.")
+
+    if wl not in ['WLM8', 'WLP8', 'both']:
+        raise ValueError("The parameter wl must be one of 'WLM8', 'WLP8', or 'both'")
+
+    if wl=='both':
+        # recursion: display both the minus and plus wave images
+        display_wfs_visit(visitid, wl='WLM8', overwrite=overwrite, save=save, verbose=verbose)
+        display_wfs_visit(visitid, wl='WLP8', overwrite=overwrite, save=save, verbose=verbose)
+        return
+
+    # If we are being asked to save the plot, and not overwrite, don't do anything if such a file already exists
+    outname_pattern = f'wfs_images_*_{visitid}_{wl}.pdf'
+    patternmatches = glob.glob(outname_pattern)
+    if save and len(patternmatches)>0 and not overwrite:
+        print(f'Already exists: {patternmatches[0]}')
+        return
+
+
+    # MAST query
+    if verbose:
+        print(f"Querying MAST about {visitid} to find {wl} images")
+    service = 'Mast.Jwst.Filtered.NIRCam'
+    parameters = {'columns': 'filename, pupil, filter, vststart, act_id, detector',
+                  'filters': [{'paramName': 'visit_id', 'values': [visitid[1:]]}]}
+    from astroquery.mast import Mast
+    tab = Mast.service_request(service, parameters)
+    unix_date_strings = [s[6:-2] for s in tab['vststart'].value] #  these are strings like '/Date(1679095623534)/'; extract just the numeric part
+    times = astropy.time.Time(np.asarray(unix_date_strings, float)/1000, format='unix')
+    times.format = 'iso'
+    tab['vststart'] = astropy.table.Column(times)
+
+    vststart = tab['vststart'][0].isot[0:10]
+    outname = f'wfs_images_{vststart}_{visitid}.pdf'
+
+    tab.sort(keys=['act_id', 'filename'])
+
+    # find the desired SW and LW files
+    mask_wl = (tab['pupil']==wl) & (tab['filter'] == 'F212N')
+    mask_long = ['LONG' in d for d in tab['detector']]
+
+
+    wl_filenames = tab[mask_wl]['filename']
+    lw_filenames = tab[mask_long]['filename']
+
+    if verbose:
+        print(wl_filenames)
+
+    if len(wl_filenames) >4:
+        if verbose:
+            print(f"Found {len(wl_filenames)} images for {wl}. Only displaying the first 4")
+            print(wl_filenames)
+
+        wl_filenames = wl_filenames[0:4]
+    elif len(wl_filenames) < 4:
+        print(f"Found too few images for {wl}. Cannot display.")
+        raise RuntimeError()
+
+    # get from MAST
+    if verbose:
+        print(f"Retrieving data files from {visitid}")
+    wlm_hduls = [stpsf.mast_wss.get_mast_filename(f) for f in wl_filenames]
+    lw_hdul = stpsf.mast_wss.get_mast_filename(lw_filenames[0])
+
+    assert 'nrca1' in wl_filenames[0]
+    assert 'nrca2' in wl_filenames[1]
+    assert 'nrca3' in wl_filenames[2]
+    assert 'nrca4' in wl_filenames[3]
+
+
+    # Pack the NIRCam module A images together, approximating a mosaic
+    approx_gap_npix = int(5//0.032)  # 5 arcsec expressed in NRC SW pixels
+    approx_gap_npix
+
+    npix=2048
+    combined_nrca = np.full((npix*2 + approx_gap_npix, npix*2+approx_gap_npix),  np.nan, dtype=float)
+
+    combined_nrca[0:npix, 0:npix] = wlm_hduls[0]['SCI'].data  # NRCA1
+    combined_nrca[npix+approx_gap_npix:, 0:npix] = wlm_hduls[1]['SCI'].data  # NRCA2
+    combined_nrca[0:npix, npix+approx_gap_npix:] = wlm_hduls[2]['SCI'].data  # NRCA3
+    combined_nrca[npix+approx_gap_npix:, npix+approx_gap_npix:] = wlm_hduls[3]['SCI'].data  # NRCA4
+
+    lwhdr = lw_hdul[0].header
+
+    # Make an image 
+    if verbose:
+        print(f"Displaying images from {visitid}")
+
+    fig, axes = plt.subplots(figsize=(16,9), ncols=2)
+
+    cmap = matplotlib.cm.viridis
+    cmap.set_bad('black')
+
+    norm_sw = matplotlib.colors.AsinhNorm(vmin=0, vmax=1e4, linear_width=2)
+    norm_lw = matplotlib.colors.AsinhNorm(vmin=0, vmax=1e2, linear_width=.2)
+
+    axes[0].imshow(combined_nrca, norm=norm_sw, cmap=cmap, origin='lower')
+    axes[1].imshow(lw_hdul['SCI'].data, norm=norm_lw, cmap=cmap, origin='lower')
+    axes[0].text(0.03, 0.97, 'NRC A SW\nF212N, WLM8',
+                 transform=axes[0].transAxes, verticalalignment='top', color='yellow',
+                fontsize='large', fontweight='bold')
+
+    if lwhdr['PUPIL'].startswith('F') and lwhdr['PUPIL'][-1] in ['N', 'M']:  # These LW filters are physically in the pupil wheel
+        lwfilt = lwhdr['PUPIL']
+    else:
+        lwfilt = lwhdr['FILTER']
+    axes[1].text(0.03, 0.97, f"NRC A LW\n{lwfilt}",
+                 transform=axes[1].transAxes, verticalalignment='top', color='yellow',
+                fontsize='large', fontweight='bold')
+
+    coo = astropy.coordinates.SkyCoord(lwhdr['TARG_RA'], lwhdr['TARG_DEC'], unit='deg')
+    rahmsstr = coo.ra.to_string(unit=u.hour, sep=':', precision=2, pad=True)
+    decdmsstr = coo.dec.to_string(unit=u.degree, sep=':', alwayssign=True, precision=2, pad=True)
+
+    coo_gal = coo.transform_to('galactic')
+    axes[0].text(0.03, 0.03, f"{lwhdr['TARGPROP']}\n$\\alpha, \\delta$ = {rahmsstr} {decdmsstr}\n$l, b$  = {coo_gal.l.deg:.3f}, {coo_gal.b.deg:.3f}",
+                 transform=axes[0].transAxes, color='cyan',
+                 fontsize='large', fontweight='bold')
+
+    for ax in axes:
+        ax.set_xticks(())
+        ax.set_yticks(())
+    plt.tight_layout()
+
+    fig.suptitle(f"WFS visit {visitid} starting {lw_hdul[0].header['VSTSTART'][0:16]}", fontsize='x-large', fontweight='bold')
+
+    if save:
+        # Save the image
+        plt.savefig(outname)
