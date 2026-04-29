@@ -81,7 +81,7 @@ You should now be able to successfully ``import stpsf`` in a Python session.
 Software Requirements
 ---------------------
 
-See `the requirements.txt specification file <https://github.com/spacetelescope/stpsf/blob/develop/requirements.txt>`_ for the required package dependencies.
+See `project.dependencies in pyproject.toml <https://github.com/spacetelescope/stpsf/blob/develop/pyproject.toml>`_ for the required package dependencies.
 
 **Required Python version**: STPSF 2.0 and above require Python 3.10 or higher.
 
