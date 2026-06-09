@@ -80,26 +80,27 @@ jobs:
       cache-key: ${{ needs.retrieve_cache.outputs.cache_key }}
       envs: |
         - name: run tests (oldest supported Python, ubuntu-latest)
-          linux: py3-legacy
+          linux: py3-legacy-xdist
           python-version: ${{ needs.supported-pythons.outputs.oldest }}
         - name: run tests with coverage (latest supported Python, ubuntu-latest)
-          linux: py3-cov
+          linux: py3-cov-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
           pytest-results-summary: true
           coverage: codecov
         - name: run tests (latest supported Python, ubuntu-latest)
-          linux: py3
+          linux: py3-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
         - name: run tests with Astropy dev (latest support Python, ubuntu-latest)
-          linux: py3-astropydev
+          linux: py3-astropydev-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
         - name: run tests with pysiaf dev (latest support Python, ubuntu-latest)
-          linux: py3-pysiafdev
+          linux: py3-pysiafdev-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
         - name: run tests with poppy dev (latest support Python, ubuntu-latest)
-          linux: py3-poppydev
+          linux: py3-poppydev-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
       fill: true
       fill_platforms: linux
+      fill_factors: xdist
       artifact-path: |
         results.xml
