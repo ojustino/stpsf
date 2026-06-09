@@ -4,8 +4,7 @@ Roman Instruments
 =================
 
 WARNING: This model has not yet been validated against other PSF
-         simulations, and uses several approximations (e.g. for
-         mirror polishing errors, which are taken from HST).
+         simulations and uses several approximations.
 """
 
 import logging
@@ -26,6 +25,52 @@ _log = logging.getLogger('stpsf')
 
 GRISM_FILTERS = ('GRISM0', 'GRISM1')
 PRISM_FILTERS = ('PRISM',)
+
+
+def _wfi_sci_xy_to_fp(x, y):
+    """
+    Convert from (x, y) in pixel coordinates to the field point numbering used
+    for WFI Zernikes and pupil masks.
+
+    Inverse of _wfi_fp_to_sci_xy().
+
+    Parameters
+    ----------
+    x, y : float
+        Pixel coordinates in Science frame. Values expected to be within 0-4096.
+
+    Returns
+    -------
+    fp : int
+        Field point index from 1 to 25.
+    """
+    n = 4096
+    vertical = np.round(4 * y / n + 1)
+    horizontal = np.round(4 * (n - x) / n)
+    fp = int(horizontal * 5 + vertical)
+    return fp
+
+
+def _wfi_fp_to_sci_xy(fp):
+    """
+    Convert from field point number to Science frame X, Y pixel coordinates.
+
+    Inverse of _wfi_sci_xy_to_fp().
+
+    Parameters
+    ----------
+    fp : int
+        Field point index from 1 to 25.
+
+    Returns
+    -------
+    (x, y) : tuple
+        Pixel coordinates in Science frame. Values expected to be within 0-4096.
+    """
+    n = 4096
+    y = int(np.mod(fp - 1, 5) * n // 4)
+    x = int(4 - (fp - 1) // 5) * n // 4
+    return (x, y)
 
 
 class WavelengthDependenceInterpolator(object):
@@ -664,8 +709,7 @@ class WFI(RomanInstrument):
     WFI represents the Roman mission's Wide Field Imager.
 
     WARNING: This model has not yet been validated against other PSF
-             simulations, and uses several approximations (e.g. for
-             mirror polishing errors, which are taken from HST).
+             simulations and uses several approximations.
     """
 
     def __init__(self):
