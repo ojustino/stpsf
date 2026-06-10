@@ -135,6 +135,7 @@ def distort_image(
     # Pixel scale information
     ny, nx = hdu_list[ext].shape
     pixelscale = hdu_list[ext].header['PIXELSCL']  # the pixel scale carries the over-sample value
+    osamp = hdu_list[ext].header['OVERSAMP']
 
     # Get 'sci' reference location where PSF is observed
     xsci_cen = hdu_list[ext].header['DET_X']  # center x location in pixels ('sci')
@@ -162,10 +163,8 @@ def distort_image(
             assert xnew_coords.shape == ynew_coords.shape, 'If new x and y inputs are a grid, must be same shapes'
             xnew, ynew = xnew_coords, ynew_coords
     elif to_frame == 'sci':
-        osamp_x = aper.XSciScale / pixelscale
-        osamp_y = aper.YSciScale / pixelscale
-        xnew = xarr / osamp_x + xnew_cen
-        ynew = yarr / osamp_y + ynew_cen
+        xnew = xarr / osamp + xnew_cen
+        ynew = yarr / osamp + ynew_cen
     else:
         # Get 'idl' coords
         xidl = xarr * pixelscale + xidl_cen
