@@ -6,7 +6,6 @@ from .. import distortion
 from .. import stpsf_core
 
 
-# @pytest.mark.skip()
 def test_apply_distortion_skew():
     """
     Test the PSF axis is skewed appropriately by the apply_distortion function.
@@ -54,7 +53,6 @@ def test_apply_distortion_skew():
         assert top_of_left > top_of_right, 'FGS PSF does not have expected skew after distortion application'
 
 
-# @pytest.mark.skip()
 def test_apply_distortion_pixel_scale():
     """
     Test the pixel scale is changed by the apply_distortion function.
@@ -130,7 +128,6 @@ def test_apply_distortion_pixel_scale():
     )
 
 
-# @pytest.mark.skip()
 def test_apply_rotation_error():
     """Test that the apply_rotation function raises an error for NIRSpec and MIRI PSFs"""
 
@@ -161,7 +158,6 @@ def test_distortion_with_custom_pixscale():
     assert np.isclose(psf[1].data.sum(), psf[3].data.sum(), rtol=0.001)
 
 
-# @pytest.mark.skip()
 def test_distortion_linear_anisotropy():
     """
     Test that distort_image is correctly reproducing the expected anisotropy in pixel scale between the x and y axes
@@ -241,3 +237,81 @@ def test_distortion_linear_anisotropy():
     assert pytest.approx(yfwhm, rel=1e-5) == yfwhm_expected, (
         'Distorted image does not have the expected Y-axis pixel scale'
     )
+
+
+def test_distortion_pixel_coords_precisely_match_siaf(plot=True):
+    """Test that the distortion code can interpolate + resample pixels onto a grid
+    that precisely matches the actual pixel Ideal frame coordinates as specified in SIAF.
+
+    This tests proper handling of various aspects of the SIAF usage and pixel coordinate setup
+
+    See https://github.com/spacetelescope/stpsf/issues/148
+    """
+
+    # Setup a sim instance on a subarray
+    nrc = stpsf_core.NIRCam()
+    nrc.filter = 'F444W'
+    nrc.aperturename = 'NRCA5_MASK335R'
+    aper = nrc._detector_geom_info.aperture
+    aper_npix = aper.XSciSize
+    nrc.detector_position = (aper_npix/2, aper_npix/2)  # enforce exact centering for this test, even if the actual reference location is elsewhere in the aperture
+
+    # Compute a PSF, without distortion for now
+    psf = nrc.calc_psf(fov_pixels = aper_npix, oversample=1, add_distortion=False, monochromatic=4e-6)
+
+    ext = 1  # DET_SAMP
+    fill_value = 0
+
+    ### Compute distortion, including inference of pixel coordinates in Science frame
+    psf_dist, xnew_idl, ynew_idl = distortion.distort_image(psf, ext, to_frame='sci', fill_value=fill_value, aper=aper, return_coords=True)
+
+    # Get pixel indices in SIAF Science frame
+    # Recall that SIAF pixel indices are 1-based. This is off by 1 from 0-based Python array indices.
+    # as per Colin Cox in JWST-STScI-001550
+    #  "All pixel counting for JWST starts with (1,1) being the central point within the first pixel."
+    y_aper_sci, x_aper_sci = np.indices((aper_npix, aper_npix))
+    x_aper_sci += 1
+    y_aper_sci += 1
+
+    # Now convert those to Ideal frame
+    x_aper_idl, y_aper_idl = aper.convert(x_aper_sci, y_aper_sci, 'sci', 'idl')
+
+    # Check the coords used in distort_image do match the ones defined in the SIAF
+    assert np.allclose(xnew_idl, x_aper_idl), "X coordinates used in distort_image ought to precisely match SIAF for this setup."
+    assert np.allclose(ynew_idl, y_aper_idl), "Y coordinates used in distort_image ought to precisely match SIAF for this setup."
+
+    if plot:
+        import matplotlib, matplotlib.pyplot as plt
+
+        #--- Compute regular grid of pixels relative to the SciRef location
+        cen = (aper_npix-1)/2+1
+        regular_ideal_grid_x = (x_aper_sci - aper.XSciRef) * nrc.pixelscale
+        regular_ideal_grid_y = (y_aper_sci - aper.YSciRef) * nrc.pixelscale
+        # Verify: is this regular grid indeed a straight line in x? and in y?
+        assert np.allclose(regular_ideal_grid_x[:, 0], regular_ideal_grid_x[0, 0])
+        assert np.allclose(regular_ideal_grid_y[0], regular_ideal_grid_y[0, 0])
+
+
+        fig, ax = plt.subplots(figsize=(12,12))
+        nevery = 10
+        ax.scatter(regular_ideal_grid_x[::nevery, ::nevery], regular_ideal_grid_y[::nevery, ::nevery],
+                   marker='+', label='Regular grid at uniform pixelscale')
+        ax.scatter(xnew_idl[::nevery, ::nevery], ynew_idl[::nevery, ::nevery],
+                   marker='+', label='x/y new grid used in distort_image')
+        ax.scatter(x_aper_idl[::nevery, ::nevery], y_aper_idl[::nevery, ::nevery],
+                  marker='+', label='aperture pixel Ideal coords from SIAF', s=100, zorder=-10)
+
+
+        cornerx, cornery = aper.corners('idl')   # Note, corners are the **outer** corners of the aperture,
+                                                 # offset by half a pixel outwards relative to the pixel centers
+
+        ax.plot(cornerx[[0,1,2,3,0]], cornery[[0,1,2,3,0]],  # use extra indices to close the square
+                color='black',
+                label='Aperture Border')
+
+        ax.set_xlim(5, 11)
+        ax.set_ylim(-11.5, -5.5)
+
+        ax.legend(framealpha=1.0, loc='upper right')
+        ax.set_title(f"Pixel sampling locations in the Ideal frame for {aper.AperName}\nShowing every {nevery}th pixel per axis, and zoomed in on a corner",
+                    )
