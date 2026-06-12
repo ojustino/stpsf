@@ -137,7 +137,17 @@ def distort_image(
     pixelscale = hdu_list[ext].header['PIXELSCL']  # the pixel scale carries the over-sample value
     osamp = hdu_list[ext].header['OVERSAMP']
 
+    # Subtle issue: How to handle oversampling and pixel scale depends on context, and
+    # in particular whether the user may have overridden the normal pixelscale with some custom
+    # value. If the simulated pixelscale does not match the actual SIAF pixelscale, then the
+    # oversampling relative to the SCI coordinate frame will not simply be the OVERSAMP keyword
+    # value. To accomodate that edge case, compute here the oversampling as the ratio of the
+    # computed pixelscale relative to the nominal average scale used in SIAF.
+    osamp = 0.5*(aper.XSciScale + aper.YSciScale) / pixelscale
+
     # Get 'sci' reference location where PSF is observed
+    xcen_sci = hdu_list[ext].header['DET_X']  # center x location in pixels ('sci')
+    ycen_sci = hdu_list[ext].header['DET_Y']  # center y location in pixels ('sci')
     xsci_cen = hdu_list[ext].header['DET_X']  # center x location in pixels ('sci')
     ysci_cen = hdu_list[ext].header['DET_Y']  # center y location in pixels ('sci')
 

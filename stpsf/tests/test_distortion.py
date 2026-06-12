@@ -159,3 +159,85 @@ def test_distortion_with_custom_pixscale():
 
     assert np.isclose(psf[0].data.sum(), psf[3].data.sum(), rtol=0.001)
     assert np.isclose(psf[1].data.sum(), psf[3].data.sum(), rtol=0.001)
+
+
+# @pytest.mark.skip()
+def test_distortion_linear_anisotropy():
+    """
+    Test that distort_image is correctly reproducing the expected anisotropy in pixel scale between the x and y axes
+
+    To do this, we generate a 2D gaussian of known "ideal" dimensions and check that the correct FWHMs are recovered after distortion is applied.
+
+    See https://github.com/spacetelescope/stpsf/issues/148
+    """
+    from copy import deepcopy
+    from scipy.interpolate import interp1d
+
+    def gaussian_2d(X, Y, mu, A=1.0, sigma=1.0):
+        x0, y0 = mu
+        r2 = (X - x0) ** 2 + (Y - y0) ** 2
+        return A * np.exp(-0.5 * r2 / sigma ** 2)
+
+    def measure_2d_fwhms(image, mu):
+        xsli = image[mu[1], :]
+        ysli = image[:, mu[0]]
+
+        xyv = np.arange(len(xsli))
+
+        x2 = interp1d(xsli[mu[0]:], xyv[mu[0]:])(0.5)
+        x1 = interp1d(xsli[:mu[0]], xyv[:mu[0]])(0.5)
+        xfwhm = x2 - x1
+
+        y2 = interp1d(ysli[mu[1]:], xyv[mu[1]:])(0.5)
+        y1 = interp1d(ysli[:mu[1]], xyv[:mu[1]])(0.5)
+        yfwhm = y2 - y1
+
+        return xfwhm, yfwhm
+
+    nrc = stpsf_core.NIRCam()
+    nrc.filter = 'F444W'
+    nrc.pupil_mask = 'MASKRND'
+    nrc.image_mask = 'MASK335R'
+    nrc.aperturename = 'NRCA5_MASK335R'
+    nrc.set_position_from_aperture_name(nrc.aperturename)
+
+    hdul = nrc.calc_psf(add_distortion=False, monochromatic=4.4e-6,
+                        fov_pixels=120)  # We're primarily running this to get the right header info
+
+    ext = 0
+
+    # Generate a broad 2D gaussian where X/Y scale can be measured more robustly
+    fwhm = 100 * hdul[ext].header['OVERSAMP']
+    sigma = fwhm / np.sqrt(8. * np.log(2.))
+    mu = np.round(((np.array(hdul[ext].data.shape)[::-1]) - 1) / 2.).astype(
+        int)  # Center on nearest pixel to geometric array center
+    Y, X = np.indices(hdul[ext].data.shape, dtype=np.float32)
+    G = gaussian_2d(X, Y, mu, sigma=sigma)
+
+    # Replace PSF model image in the PSF HDUList with the gaussian
+    hdul[ext].data = G
+
+    # Create simplified SIAF aperture to be sure only anisotropy between X and Y scales are relevant.
+    aper = deepcopy(nrc.siaf[nrc.aperturename])
+    for key in aper.__dict__:
+        if key.startswith('Idl2Sci') and aper.__dict__[key] is not None:
+            keyinv = key.replace('Idl2Sci', 'Sci2Idl')
+            if key not in ['Idl2SciX10', 'Idl2SciY11']:  # Zero all coeffs besides X10 and Y11
+                aper.__dict__[key] = aper.__dict__[keyinv] = 0.
+            else:  # Otherwise, ensure reversible transform
+                aper.__dict__[keyinv] = 1. / aper.__dict__[key]
+
+    G_distorted = distortion.distort_image(hdul, ext=ext, to_frame='sci', fill_value=0, aper=aper)
+
+    xfwhm, yfwhm = measure_2d_fwhms(G_distorted, mu)
+
+    xfwhm_expected = fwhm * nrc.pixelscale / aper.XSciScale
+    yfwhm_expected = fwhm * nrc.pixelscale / aper.YSciScale
+
+    assert pytest.approx(xfwhm, rel=1e-5) == xfwhm_expected, (
+        'Distorted image does not have the expected X-axis pixel scale'
+    )
+
+    assert pytest.approx(yfwhm, rel=1e-5) == yfwhm_expected, (
+        'Distorted image does not have the expected Y-axis pixel scale'
+    )
