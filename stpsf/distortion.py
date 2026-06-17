@@ -112,7 +112,6 @@ def distort_image(
     # Pixel scale information
     ny, nx = hdu_list[ext].shape
     pixelscale = hdu_list[ext].header['PIXELSCL']  # the pixel scale carries the over-sample value
-    osamp = hdu_list[ext].header['OVERSAMP']
 
     # Subtle issue: How to handle oversampling and pixel scale depends on context, and
     # in particular whether the user may have overridden the normal pixelscale with some custom

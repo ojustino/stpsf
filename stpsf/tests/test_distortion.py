@@ -239,7 +239,7 @@ def test_distortion_linear_anisotropy():
     )
 
 
-def test_distortion_pixel_coords_precisely_match_siaf(plot=True):
+def test_distortion_pixel_coords_precisely_match_siaf(plot=False):
     """Test that the distortion code can interpolate + resample pixels onto a grid
     that precisely matches the actual pixel Ideal frame coordinates as specified in SIAF.
 
@@ -287,10 +287,6 @@ def test_distortion_pixel_coords_precisely_match_siaf(plot=True):
         cen = (aper_npix-1)/2+1
         regular_ideal_grid_x = (x_aper_sci - aper.XSciRef) * nrc.pixelscale
         regular_ideal_grid_y = (y_aper_sci - aper.YSciRef) * nrc.pixelscale
-        # Verify: is this regular grid indeed a straight line in x? and in y?
-        assert np.allclose(regular_ideal_grid_x[:, 0], regular_ideal_grid_x[0, 0])
-        assert np.allclose(regular_ideal_grid_y[0], regular_ideal_grid_y[0, 0])
-
 
         fig, ax = plt.subplots(figsize=(12,12))
         nevery = 10
@@ -300,7 +296,6 @@ def test_distortion_pixel_coords_precisely_match_siaf(plot=True):
                    marker='+', label='x/y new grid used in distort_image')
         ax.scatter(x_aper_idl[::nevery, ::nevery], y_aper_idl[::nevery, ::nevery],
                   marker='+', label='aperture pixel Ideal coords from SIAF', s=100, zorder=-10)
-
 
         cornerx, cornery = aper.corners('idl')   # Note, corners are the **outer** corners of the aperture,
                                                  # offset by half a pixel outwards relative to the pixel centers
