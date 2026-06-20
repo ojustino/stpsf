@@ -448,7 +448,10 @@ class SpaceTelescopeInstrument(poppy.instrument.Instrument):
             self._extra_keywords.update(pupil_optic.header_keywords())
 
         # add coord transform from entrance pupil to exit pupil
-        optsys.add_inversion(axis='y', name='OTE exit pupil', hide=True)
+        # unless ref data are already in exit pupil orientation (like with WFI)
+        if self.name != 'WFI' or self._datapath == os.path.join(self._STPSF_basepath, 'WFI'):
+            # TEMP: remove "or" from conditional after testing
+            optsys.add_inversion(axis='y', name='OTE exit pupil', hide=True)
 
         # add rotation at this point, if present - needs to be after the
         # exit pupil inversion.
@@ -590,7 +593,9 @@ class SpaceTelescopeInstrument(poppy.instrument.Instrument):
             else:
                 raise TypeError('Not sure what to do with a pupil of ' 'that type: {}'.format(type(self.pupil)))
             # ---- check if we have an index into a datacube; this is used for Roman
-            transmission_index = (self.pupil_datacube_index if hasattr(self, 'pupil_datacube_index') else None)
+            transmission_index = (self._pupil_datacube_index
+                                  if hasattr(self, '_pupil_datacube_index')
+                                  else None)
             # ---- apply pupil intensity and OPD to the optical model
             pupil_optic = poppy.FITSOpticalElement(
                 name='{} Entrance Pupil'.format(self.telescope),
