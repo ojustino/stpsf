@@ -44,7 +44,7 @@ def _wfi_sci_xy_to_fp(x, y):
     fp : int
         Field point index from 1 to 25.
     """
-    n = 4096
+    n = WFI.NPIXELS
     vertical = np.round(4 * y / n + 1)
     horizontal = np.round(4 * (n - x) / n)
     fp = int(horizontal * 5 + vertical)
@@ -67,21 +67,27 @@ def _wfi_fp_to_sci_xy(fp):
     (x, y) : tuple
         Pixel coordinates in Science frame. Values expected to be within 0-4096.
     """
-    n = 4096
+    n = WFI.NPIXELS
     y = int(np.mod(fp - 1, 5) * n // 4)
     x = int(4 - (fp - 1) // 5) * n // 4
     return (x, y)
 
 
 class WavelengthDependenceInterpolator(object):
-    """WavelengthDependenceInterpolator can be configured with
+    """
+    WavelengthDependenceInterpolator can be configured with
     `n_zernikes` worth of Zernike coefficients at up to `n_wavelengths`
     wavelengths, and will let you `get_aberration_terms` for any
     wavelength in range interpolated linearly between measured/known
-    points
+    points.
+
+    For an imaging filter in STPSF's default reference WFI data,
+    n_wavelengths=3 and n_zernikes=210. For a grism or prism filter,
+    n_wavelengths=16 and n_zernikes=45. See the docstring for
+    `build_detector_from_table()` in this file for more information.
     """
 
-    def __init__(self, n_wavelengths=16, n_zernikes=45):
+    def __init__(self, n_wavelengths, n_zernikes):
         self._n_wavelengths = n_wavelengths
         self._n_zernikes = n_zernikes
         self._aberration_terms = np.zeros((n_wavelengths, n_zernikes), dtype=np.float64)
@@ -100,14 +106,12 @@ class WavelengthDependenceInterpolator(object):
         else:
             # can't add more wavelengths without allocating new _aberration_terms array
             raise ValueError(
-                'Already have information at {} wavelengths ' '(pass larger n_wavelengths to __init__?)'.format(
-                    self._n_wavelengths
-                )
-            )
+                f"Already have information at {self._n_wavelengths} "
+                "wavelengths (pass larger n_wavelengths to __init__?)")
         if len(zernike_array) != self._n_zernikes:
             raise ValueError(
-                'Expected {} aberration terms (pass different ' 'n_zernikes to __init__?)'.format(self._n_zernikes)
-            )
+                f"Expected {self._n_zernikes} aberration terms (pass different "
+                "n_zernikes to __init__?)")
         self._aberration_terms[aberration_row_idx] = zernike_array
 
     def get_aberration_terms(self, wavelength):
@@ -137,17 +141,18 @@ class WavelengthDependenceInterpolator(object):
 
 
 class FieldDependentAberration(poppy.ZernikeWFE):
-    """FieldDependentAberration incorporates aberrations that
+    """
+    FieldDependentAberration incorporates aberrations that
     are interpolated in wavelength, x, and y pixel positions by
     computing the Zernike coefficients for a particular wavelength
     and position.
-    """
 
-    """By default, `get_aberration_terms` will zero out Z1, Z2, and Z3
+    By default, `get_aberration_terms` will zero out Z1, Z2, and Z3
     (piston, tip, and tilt) as they are not meaningful for telescope
     PSF calculations (the former is irrelevant; the latter two would
     be handled by a distortion solution). Change
-    `_omit_piston_tip_tilt` to False to include the Z1-3 terms."""
+    `_omit_piston_tip_tilt` to False to include the Z1-3 terms.
+    """
     _omit_piston_tip_tilt = True
     _field_position = None
 
@@ -261,37 +266,76 @@ def _load_wfi_detector_aberrations(filename):
     zernike_table = ascii.read(filename, encoding='utf-8-sig')
     detectors_dict = {}
 
+    # TEMP: account for differences between aberration file versions
+    # (change references to these variables back once done testing)
+    if 'Z210' in zernike_table.colnames:  # newer files
+        det_col = 'sca'
+        fp_col = 'fov'
+        wave_col = 'wave'
+        det_pos_x = 'SCI_X'  # already in pixels
+        det_pos_y = 'SCI_Y'  # already in pixels
+        calc_pix = False
+        conv_to_m = 1e-9  # nm to m. this is wavelength unit, not Zernike term
+    else:
+        det_col = 'sca'
+        fp_col = 'field_point'
+        wave_col = 'wavelength'
+        det_pos_x = 'local_x'  # still in mm
+        det_pos_y = 'local_y'  # still in mm
+        calc_pix = True
+        conv_to_m = 1e-6  # micron to m
+
     def build_detector_from_table(number, zernike_table):
-        """Build a FieldDependentAberration optic for a detector using
-        number of Zernike terms found per row (Z1-Z45 by default) for
-        specified wavelengths and field points"""
+        """
+        Build a FieldDependentAberration optic for a detector using number of
+        Zernike terms found per row for specified wavelength and field points.
+
+        In STPSF's default reference WFI data, imaging filters contain
+        aberration data at the low, middle, and high wavelengths of their
+        bandpasses. There are 16 unique wavelengths with recorded aberration
+        data across the WFI's imaging filters. The prism, grism0, and grism1
+        filters each contain aberration data for all 16 such wavelengths.
+
+        Each imaging filter contains 25 field points per detector and Zernike
+        coefficients up to Z210 for each detector/field point/intra-filter
+        wavelength combination. The grism/prism filters contain 5 field points
+        per detector and Zernike coefficients up to Z45 for each
+        detector/field point/intra-filter wavelength combination.
+        """
         n_zernikes = len([c for c in zernike_table.columns
                           if re.match(r'Z\d+', c)])
-        single_detector_info = zernike_table[zernike_table['sca'] == number]
-        field_points = set(single_detector_info['field_point'])
+        single_detector_info = zernike_table[zernike_table[det_col] == number]
+        field_points = set(single_detector_info[fp_col])
         detector = FieldDependentAberration(
-            4096, 4096, radius=constants.ROMAN_PUPIL_DIAMETER/2,
+            WFI.NPIXELS, WFI.NPIXELS, radius=constants.ROMAN_PUPIL_DIAMETER/2,
             name=f"Field Dependent Aberration (WFI{number:02d})"
         )
         for field_id in field_points:
-            field_point_rows = single_detector_info[single_detector_info['field_point'] == field_id]
-            local_x, local_y = field_point_rows[0]['local_x'], field_point_rows[0]['local_y']
+            field_point_rows = single_detector_info[single_detector_info[fp_col] == field_id]
+            local_x, local_y = field_point_rows[0][det_pos_x], field_point_rows[0][det_pos_y]
             interpolator = build_wavelength_dependence(field_point_rows,
                                                        n_zernikes)
 
-            midpoint_pixel = 4096 / 2
-            # (local_x in mm / 10 um pixel size) -> * 1e2
-            # local_x and _y range from -20.44 to +20.44, so adding to the midpoint pixel
-            # makes sense to place (-20.44, -20.44) at (4, 4)
-            pixx, pixy = (round(midpoint_pixel - local_x * 1e2), round(midpoint_pixel + local_y * 1e2))
+            if not calc_pix:  # newer files
+                # TEMP: remove "if" and unindent below (if kept. probably so)
+                pixx, pixy = local_x, local_y  # already in pixels
+            else:
+                # TEMP: delete "else" and unindent below (if kept. probably not)
+
+                midpoint_pixel = WFI.NPIXELS / 2
+                # (local_x in mm / 10 um pixel size) -> * 1e2
+                # local_x and _y range from -20.44 to +20.44, so adding to the midpoint pixel
+                # makes sense to place (-20.44, -20.44) at (4, 4)
+                pixx, pixy = (round(midpoint_pixel - local_x * 1e2), round(midpoint_pixel + local_y * 1e2))
 
             detector.add_field_point(pixx, pixy, interpolator)
+
         return detector
 
     def build_wavelength_dependence(rows, n_zernikes):
         """Build an interpolator object that interpolates `n_zernikes` Zernike
         terms in wavelength space"""
-        wavelengths = set(rows['wavelength'])
+        wavelengths = set(rows[wave_col])
         interpolator = WavelengthDependenceInterpolator(
             n_wavelengths=len(wavelengths),
             n_zernikes=n_zernikes
@@ -299,7 +343,7 @@ def _load_wfi_detector_aberrations(filename):
         for row in rows:
             z = np.array([row['Z{}'.format(idx + 1)]
                           for idx in range(n_zernikes)])
-            interpolator.set_aberration_terms(row['wavelength'] * 1e-6, z)
+            interpolator.set_aberration_terms(row[wave_col] * conv_to_m, z)
 
         return interpolator
 
@@ -424,18 +468,18 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         return psf
 
-    # slightly different versions of the following two functions
-    # from the parent superclass
-    # in order to interface with the FieldDependentAberration class
+    # slightly different versions of the following two functions from the parent
+    # superclass in order to interface with the FieldDependentAberration class
     @property
     def detector_position(self):
         """The pixel position in (X, Y) on the detector"""
-        return self._detectors[self._detector].field_position
+        return self._detector_position
 
     @detector_position.setter
     def detector_position(self, position):
-        # exact copy of superclass function except we save the
-        # into a different location.
+        """Save new detector pixel position into the each detector's
+        FieldDependentAberration instance. Update index of matching field
+        point's slice in pupil file data cube."""
         try:
             x, y = map(int, position)
         except ValueError:
@@ -447,7 +491,10 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
                 'The maximum allowed detector pixel ' 'coordinate value is {}'.format(self._detector_npixels - 1)
             )
 
-        self._detectors[self._detector].field_position = (int(position[0]), int(position[1]))
+        for det, aber_obj in self._detectors.items():
+            aber_obj.field_position = (int(position[0]), int(position[1]))
+        self._pupil_datacube_index = _wfi_sci_xy_to_fp(*position)
+        self._detector_position = position
 
     def _get_aberrations(self):
         """Get the OpticalElement that applies the field-dependent
@@ -524,7 +571,14 @@ class WFIPupilController:
         Path to STPSF-WFI data files
     """
 
-    def __init__(self, datapath):
+    def __init__(self, datapath,
+                 stpsf_basepath):
+        # TEMP: adjust pupil formatter based on intended pupil files
+        if datapath != os.path.join(stpsf_basepath, 'WFI'):
+            self.post_scipa = True
+        else:
+            self.post_scipa = False
+
         self.set_base_path(datapath)
 
         self._pupil = None
@@ -594,7 +648,7 @@ class WFIPupilController:
         self._datapath = datapath
         self._pupil_basepath = os.path.join(self._datapath, 'pupils')
 
-    def pupil_file_formatter(self, wfi_filter, detector):
+    def pupil_file_formatter(self, pupil_mask, detector):
         """
         Generate proper pupil filename given a filter and a detector.
 
@@ -606,12 +660,17 @@ class WFIPupilController:
         detector : string
             See WFI.detector_list for a list of valid detectors.
         """
-        if wfi_filter.upper().startswith('F'):
-            return f"RST_WIM_Filter_{wfi_filter}_{detector}.fits.gz"
-        elif wfi_filter.upper().startswith('GRISM'):
-            return f"RST_WSM_Grism_grism_{detector}.fits.gz"
-        elif wfi_filter.upper() == 'PRISM':
-            return f"RST_WSM_Prism_prism_{detector}.fits.gz"
+        # TEMP: adjust pupil formatter based on intended pupil files
+        if not self.post_scipa:
+            if pupil_mask.upper().startswith('F'):
+                return f"RST_WIM_Filter_{pupil_mask}_{detector}.fits.gz"
+            elif pupil_mask.upper().startswith('GRISM'):
+                return f"RST_WSM_Grism_grism_{detector}.fits.gz"
+            elif pupil_mask.upper() == 'PRISM':
+                return f"RST_WSM_Prism_prism_{detector}.fits.gz"
+        else:
+            return (f"RST_WFI_pupil_{pupil_mask.title()}_"
+                    f"{detector}_allfieldpoints.fits.gz")
 
     def update_pupil(self, wfi_filter, detector):
         """
@@ -712,8 +771,9 @@ class WFI(RomanInstrument):
     WARNING: This model has not yet been validated against other PSF
              simulations and uses several approximations.
     """
+    NPIXELS = 4096
 
-    def __init__(self):
+    def __init__(self, datapath=None):
         # pixel scale is from Roman-AFTA SDT report final version (p. 91)
         # https://roman.ipac.caltech.edu/sims/Param_db.html
         pixelscale = 110e-3  # arcsec/px
@@ -725,8 +785,16 @@ class WFI(RomanInstrument):
 
         super().__init__('WFI', pixelscale=pixelscale)
 
+        # TEMP: point to different location with post-SCIPA reference files
+        if datapath:
+            # self._STPSF_basepath =
+            old_datapath = self._datapath
+            self._datapath = datapath
+
         # Initialize the pupil controller
-        self._pupil_controller = WFIPupilController(self._datapath)
+        self._pupil_controller = WFIPupilController(self._datapath,
+                                                    # TEMP: compare ref files
+                                                    self._STPSF_basepath)
 
         self.pupil_mask_list = [fltr for fltr in self.filter_list.copy()
                                 if not fltr.startswith('GRISM')]
@@ -734,21 +802,55 @@ class WFI(RomanInstrument):
 
         # Define default aberration files for WFI filters
         self._aberration_files = {'custom': None}
-        self._aberration_files.update({
-            fltr: os.path.join(
-                self._datapath,
-                (f"{'WIM' if fltr.startswith('F') else 'WSM'}"
-                 f"_{fltr}_zernikes_cycle10.csv"))
-            for fltr in self.filter_list
-        })
+        # TEMP: formatter for different aberration file names and locations
+        if datapath:
+            self._aberration_files.update({
+                fltr: os.path.join(
+                    self._datapath,
+                    'aberrations',
+                    # f"{fltr}_25fields_Z210_multiwave.csv"
+                    f"{fltr}_25fields_zernike_Z210_multiwavelength.csv"
+                    if fltr.startswith('F')
+                    else f"{fltr}_5fields_Z45_multiwave.csv")
+                for fltr in self.filter_list})
+        else:
+            # OG CONTENT; unindent when done testing if it will be kept
+            self._aberration_files.update({
+                fltr: os.path.join(
+                    self._datapath,
+                    (f"{'WIM' if fltr.startswith('F') else 'WSM'}"
+                     f"_{fltr}_zernikes_cycle10.csv"))
+                for fltr in self.filter_list
+            })
 
-        # Load and set default detector from aberration file
-        self._detector_npixels = 4096
+        # Load aberration info from ref files
+        self._detector_npixels = self.NPIXELS
         self._load_detector_aberrations(self._aberration_files[self.mode])
-        self.detector = 'WFI01'
 
-        self.opd_list = [os.path.join(self._STPSF_basepath, 'upscaled_HST_OPD.fits')]
-        self.pupilopd = self.opd_list[-1]
+        # TEMP: use new high-frequency OPDs if new datapath, else Hubble OPD
+        if datapath:
+            self._opd_file_dict = {
+                det: os.path.join(
+                    self._datapath,
+                    'aberrations',
+                    # f"{det}_Z210_high_freq_cube.fits"
+                    f"SCA{i}_Z210_high_frequency_cube.fits")
+                # for det in self.detector_list})
+                for i, det in enumerate(self.detector_list, 1)}
+            self._pupilopd = self._opd_file_dict['WFI01']
+            # may need to shift where self.detector is set?
+            # self.pupilopd = os.path.join(self._datapath, 'None')
+        else:
+            # # OG CONTENT; unindent when done testing if it will be kept
+            # self.opd_list = [os.path.join(self._STPSF_basepath, 'upscaled_HST_OPD.fits')]
+            # self.pupilopd = self.opd_list[-1]
+            # or, changed attribute names to go with new pupilopd @property
+            self._opd_file_list = [os.path.join(self._STPSF_basepath, 'upscaled_HST_OPD.fits')]
+            self._pupilopd = self._opd_file_list[-1]
+
+        # Set initial detector and position
+        self.detector = 'WFI01'
+        self.detector_position = (self.NPIXELS // 2, self.NPIXELS // 2)
 
     def _addAdditionalOptics(self, optsys, **kwargs):
         _log.debug('   No optics added for WFI')
@@ -790,7 +892,27 @@ class WFI(RomanInstrument):
         assert self.pupil is not None, 'pupil is None'
         super()._validate_config(**kwargs)
 
+    @property
+    def pupilopd(self):
+        """The file containing high-frequency Zernike information for the
+        current detector. Set by the detector setter."""
+        return self._pupilopd
+
+    @pupilopd.setter
+    def pupilopd(self, value):
+        # Only allow direct set of pupilopd when done by parent class in super()
+        # (i.e., before WFI class has set a detector)
+        if self.detector is None:
+            self._pupilopd = value
+        else:
+            raise ValueError('pupilopd is set automatically on updates to the '
+                             'detector attribute')
+
     def _update_pupil(self, wfi_filter=None, detector=None):
+        """
+        Chooses proper pupil file. Pupil file geometry depends on field position
+        parameterized by detector and field position number within a detector.
+        """
         if detector is None:
             detector = self.detector
         if wfi_filter is None:
@@ -805,8 +927,9 @@ class WFI(RomanInstrument):
         """
         The current WFI detector. See WFI.detector_list for valid values.
 
-        As of Cycle 10, also switches the current filter's throughput file
-        location since these are now detector-based.
+        Also adjusts the current 1) pupil file (since these depend on filter and
+        *detector*), 2) path to throughput files, and 3) OPD file containing
+        contributions from high-frequency Zernike terms above Z210.
         """
         if value.upper().startswith('SCA'):  # backward-compatible name assignment
             value = f"WFI{value[-2:]}"
@@ -814,8 +937,17 @@ class WFI(RomanInstrument):
             raise ValueError('Invalid detector. Valid detector names are: {}'.format(', '.join(self.detector_list)))
 
         self._detector = value.upper()
+
+        # Update pupil and high-frequency OPD file locations (conditional needed
+        # to exclude call to setter by SpaceTelescopeInstrument.__init__()
         if self._detector is not None:
             self._update_pupil(detector=self._detector)
+
+            # TEMP: change OPD if there are multiple options
+            if self._datapath != os.path.join(self._STPSF_basepath, self.name):
+                self._pupilopd = self._opd_file_dict[self._detector]
+
+        # Update throughput file directory
         self._update_aperturename()
 
     def _update_aperturename(self):
@@ -868,9 +1000,16 @@ class WFI(RomanInstrument):
             # (the corresponding "WFINN" child directory of "WFI/filters").
 
             # save filter info but change throughput file based on new detector
-            info_edit = {key : (val if key != 'filename'
-                                else str(parent / self._detector / filter_path.name))
-                         for key, val in info._asdict().items()}
+            if self._datapath != os.path.join(self._STPSF_basepath, self.name):
+                # TEMP: remove "if" when done testing
+                info_edit = {key : (val if key != 'filename'
+                                    else str(Path(self._datapath) / 'filters' / self._detector / filter_path.name))
+                             for key, val in info._asdict().items()}
+            else:
+                # TEMP: unindent "else" when done testing
+                info_edit = {key : (val if key != 'filename'
+                                    else str(parent / self._detector / filter_path.name))
+                             for key, val in info._asdict().items()}
             filters_info[fl] = stpsf_core.Filter(**info_edit)
 
         self._filters = filters_info
