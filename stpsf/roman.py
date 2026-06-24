@@ -493,8 +493,12 @@ class RomanInstrument(stpsf_core.SpaceTelescopeInstrument):
 
         for det, aber_obj in self._detectors.items():
             aber_obj.field_position = (int(position[0]), int(position[1]))
-        self._pupil_datacube_index = _wfi_sci_xy_to_fp(*position)
         self._detector_position = position
+
+
+        self._pupil_datacube_index = _wfi_sci_xy_to_fp(*position) - 1
+        # subtract 1 because field point indices in the GSFC source data are
+        # 1-indexed while the pupil file datacube is 0-indexed
 
     def _get_aberrations(self):
         """Get the OpticalElement that applies the field-dependent
