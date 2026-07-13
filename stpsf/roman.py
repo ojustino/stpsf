@@ -157,8 +157,13 @@ class FieldDependentAberration(poppy.ZernikeWFE):
     _field_position = None
 
     def __init__(
-        self, pixel_width, pixel_height, name='Field-dependent Aberration', radius=1.0, oversample=1, interp_order=3
+        self, pixel_width, pixel_height, name='Field-dependent Aberration',
+        radius=1.0, oversample=1, interp_order=3,
+        # TEMP: delete added argument
+        old_files=calc_pix
     ):
+        self.old_files = old_files # TEMP: delete added argument
+
         self.pixel_width, self.pixel_height = pixel_width, pixel_height
         self.field_position = pixel_width // 2, pixel_height // 2
         self._wavelength_interpolators = {}
@@ -174,7 +179,11 @@ class FieldDependentAberration(poppy.ZernikeWFE):
             wavelength = wave
         else:
             wavelength = wave.wavelength
-        self.coefficients = wavelength * self.get_aberration_terms(wavelength)
+        # TEMP: keep "else" on switch to new ref file structure
+        if self.old_files:
+            self.coefficients = wavelength * self.get_aberration_terms(wavelength)
+        else:
+            self.coefficients = self.get_aberration_terms(wavelength) * u.meter
         return super().get_opd(wave)
 
     @property
@@ -308,7 +317,9 @@ def _load_wfi_detector_aberrations(filename):
         field_points = set(single_detector_info[fp_col])
         detector = FieldDependentAberration(
             WFI.NPIXELS, WFI.NPIXELS, radius=constants.ROMAN_PUPIL_DIAMETER/2,
-            name=f"Field Dependent Aberration (WFI{number:02d})"
+            name=f"Field Dependent Aberration (WFI{number:02d})",
+            # TEMP: delete added argument
+            old_files=calc_pix
         )
         for field_id in field_points:
             field_point_rows = single_detector_info[single_detector_info[fp_col] == field_id]
