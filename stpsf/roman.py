@@ -160,7 +160,7 @@ class FieldDependentAberration(poppy.ZernikeWFE):
         self, pixel_width, pixel_height, name='Field-dependent Aberration',
         radius=1.0, oversample=1, interp_order=3,
         # TEMP: delete added argument
-        old_files=calc_pix
+        old_files=False
     ):
         self.old_files = old_files # TEMP: delete added argument
 
