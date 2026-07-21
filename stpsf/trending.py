@@ -239,7 +239,8 @@ def wfe_histogram_plot(
     thresh=None,
     pid=None,
     download_opds=True,
-    mark_corrections='lines',
+    mark_corrections='arrows',
+    mark_expected=True,
     ote_only=False,
     min_wfe=60,
     max_wfe=None
@@ -265,6 +266,12 @@ def wfe_histogram_plot(
         extreme values. I.e. any fraction of time above max_wfe will show up in the histogram as if extra time right
         at the max_wfe value. This is intentional such that the fraction of time shown in the histogram always sums
         to 100%.
+    mark_corrections : str
+        How to visually indicate mirror correction moves. 'arrows', 'lines', 'triangles'. This is mostly vestigial
+        from earlier development. 'arrows' is the recommended choice.
+    mark_expected : bool
+        Should the expected post-correction WFE be shown? This is retrieved from the 'EXPECTED' FITS extension in the
+        WSS output OPD file.
 
     Returns
     -------
@@ -296,6 +303,7 @@ def wfe_histogram_plot(
     # Retrieve all RMSes, from the FITS headers.
     # These are observatory WFE (OTE + NIRCam), at the WFS sensing field point
     rmses = []
+    rmses_predicted_ifcorrected = []  # WAS 'Expected' phase, if a correction were to be performed.
 
     if 'rms_wfe' in opdtable1.colnames:
         rmses = opdtable1['rms_wfe']
@@ -310,6 +318,7 @@ def wfe_histogram_plot(
         if 'rms_wfe' not in opdtable1.colnames:
             if ote_only is False:
                 rmses.append(fits.getheader(full_file_path, ext=1)['RMS_WFE'])
+                rmses_predicted_ifcorrected.append(fits.getheader(full_file_path, ext=3)['RMS_WFE'])
             elif ote_only is True:
                 opd_data = fits.getdata(full_file_path, ext=1)
                 mask = opd_data != 0
@@ -325,6 +334,9 @@ def wfe_histogram_plot(
                 wf_si = target_256 * mask  # Nircam target phase map at FP1
 
                 rmses.append(stpsf.utils.rms(opd_data - wf_si, mask=mask))
+
+                opd_expected_data = fits.getdata(full_file_path, ext=3)
+                rmses_predicted_ifcorrected.append(stpsf.utils.rms(opd_expected_data - wf_si, mask=mask))
 
         mjds = opdtable1['date_obs_mjd']
         pre_or_post.append(stpsf.mast_wss.infer_pre_or_post_correction(row))
@@ -353,6 +365,11 @@ def wfe_histogram_plot(
     axes[0].xaxis.axis_date()
     sensing_markers, = axes[0].plot(dates.plot_date, np.asarray(rmses) * 1e3, '.', ms=ms, ls='-',
                                          label='Sensing visit')
+    if mark_expected:  # Plot expected post-correction RMS "floor"
+        expected_markers, = axes[0].plot(dates.plot_date, np.asarray(rmses_predicted_ifcorrected) * 1e3,
+                                              'none', ls='-', zorder=-10, color='0.7',
+                                              label='Expected post correction')
+
     if end_date - start_date < 3*u.year:
         axes[0].xaxis.set_major_locator(matplotlib.dates.DayLocator(bymonthday=[1]))
         axes[0].xaxis.set_minor_locator(matplotlib.dates.DayLocator(interval=1))
@@ -399,7 +416,10 @@ def wfe_histogram_plot(
                 )
         arrow_placeholder = matplotlib.lines.Line2D([], [], color='limegreen', marker='v', ls='none',
                                                     markersize=10, label='Corrections')
-        axes[0].legend(handles=[sensing_markers, arrow_placeholder])
+        handles = [sensing_markers, arrow_placeholder, ]
+        if mark_expected:
+            handles.append(expected_markers)
+        axes[0].legend(handles=handles)
 
     if pid:
         axes[0].set_ylim(0.975 * axes[0].get_ylim()[0], 1.025 * axes[0].get_ylim()[1])
