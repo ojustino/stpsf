@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 name = "stpsf"
 description = "Creates simulated point spread functions for Space Telescopes (James Webb, Roman)"
 authors = [
-    { name = "Association of Universities for Research in Astronomy", email = "help@stsci.edu" },
+    { name = "STPSF developers, at Space Telescope Science Institute and elsewhere" },
 ]
 license-files = ["LICENSE.md"]
 dynamic = [
