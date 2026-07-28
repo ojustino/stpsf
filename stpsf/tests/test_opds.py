@@ -653,6 +653,8 @@ def test_get_rms_per_segment():
 
         assert np.isclose(rms_per_seg[seg], ote.rms(seg))
 
+
+@pytest.mark.remote_data
 def test_iec_wfe_model():
     jwst = pytest.importorskip('jwst')  # The IEC telemetry retrieval functionality requires the JWST pipeline
     import astropy.time
