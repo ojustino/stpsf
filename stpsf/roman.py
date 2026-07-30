@@ -21,6 +21,11 @@ from scipy.interpolate import griddata
 
 from . import distortion, utils, stpsf_core, detectors, constants
 
+# Monkey patch: double the cache size over the default maxsize=128
+# to prevent slowdowns from increased number of Zernike coefficients
+from functools import lru_cache
+poppy.zernike.cached_zernike1 = lru_cache(maxsize=256)(poppy.zernike.cached_zernike1.__wrapped__)
+
 _log = logging.getLogger('stpsf')
 
 GRISM_FILTERS = ('GRISM0', 'GRISM1')
