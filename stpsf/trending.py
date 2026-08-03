@@ -132,41 +132,39 @@ def wavefront_time_series_plot(
     is_routine = np.asarray([int(v[1:6]) in routine_pids for v in opdtable[where_pre]['visitId']])
 
     # Plot all, with connecting line
-    plt.plot_date(
+    ax = plt.gca()
+    ax.xaxis.axis_date()
+    ax.plot(
         dates.plot_date,
         rms_nm,
         ls='-',
+        marker='o',
         color='gray',
     )
     # Plot maintenance visits
-    plt.plot_date(
+    ax.plot(
         dates[where_pre][is_routine].plot_date,
         rms_nm[where_pre][is_routine],
         'o',
-        xdate=True,
         label='WF Maintenance Sensing',
         color='C0',
     )
     # Plot other visits (MIMF etc)
-    plt.plot_date(
+    ax.plot(
         dates[where_pre][~is_routine].plot_date,
         rms_nm[where_pre][~is_routine],
         'o',
-        xdate=True,
         label='Other Sensing (MIMF etc)',
         color='purple',
     )
     # Plot corrections.
-    plt.plot_date(
+    ax.plot(
         dates[where_post].plot_date,
         rms_nm[where_post],
         'v',
-        xdate=True,
         label='Wavefront Corrections',
         color='C2',
     )
-
-    ax = plt.gca()
     ax.set_ylabel('Observatory WFE (OTE+NRC)\n[nm rms]', fontweight='bold', fontsize=15)
     ax.set_xlabel('Date, UTC', fontweight='bold', fontsize=15)
 
@@ -352,7 +350,8 @@ def wfe_histogram_plot(
 
     ms = 14  # markersize
 
-    sensing_markers, = axes[0].plot_date(dates.plot_date, np.asarray(rmses) * 1e3, '.', ms=ms, ls='-',
+    axes[0].xaxis.axis_date()
+    sensing_markers, = axes[0].plot(dates.plot_date, np.asarray(rmses) * 1e3, '.', ms=ms, ls='-',
                                          label='Sensing visit')
     if end_date - start_date < 3*u.year:
         axes[0].xaxis.set_major_locator(matplotlib.dates.DayLocator(bymonthday=[1]))
@@ -1397,9 +1396,10 @@ def monthly_trending_plot(year, month, verbose=True, instrument='NIRCam', filter
     fig.suptitle(f'WF Trending for {year}-{month:02d}{title_extra}', fontsize=fs * 1.5, fontweight='bold')
 
     # Plot 1: Wavefront Error
+    axes[0].xaxis.axis_date()
+    axes[0].plot(dates_array.plot_date, rms_obs * 1e9, color='C1', ls='-', marker='o', label='Observatory WFE at NIRCam NRCA3')
+    axes[0].plot(dates_array.plot_date, rms_ote * 1e9, color='C0', ls='-', marker='o', label='Telescope WFE')
 
-    axes[0].plot_date(dates_array.plot_date, rms_obs * 1e9, color='C1', ls='-', label='Observatory WFE at NIRCam NRCA3')
-    axes[0].plot_date(dates_array.plot_date, rms_ote * 1e9, color='C0', ls='-', label='Telescope WFE')
     for ax in axes:
         for corr_date in correction_times:
             if (start_date < corr_date) and (corr_date < end_date):
@@ -1435,13 +1435,13 @@ def monthly_trending_plot(year, month, verbose=True, instrument='NIRCam', filter
             [ee_ax_ylim, np.abs((ees_at_rad - median_ee) / median_ee).max() * 1.1]
         )  # display tweak: adjust the plot Y scale sensibly to its contents
 
-        axes[1].plot_date(
-            dates_array.plot_date,
+        axes[1].xaxis.axis_date()
+        axes[1].plot(dates_array.plot_date,
             (ees_at_rad - median_ee) / median_ee,
             ls='-',
+            marker='o', 
             color=color,
-            label=f'$\\Delta$EE within {ee_rad:.2f} arcsec ({ee_npix} pix)',
-        )
+            label=f'$\\Delta$EE within {ee_rad:.2f} arcsec ({ee_npix} pix)',)
 
         axes[1].text(
             0.01,
@@ -1834,7 +1834,8 @@ def show_wfs_around_obs(filename, verbose='True'):
     ax4 = fig.add_subplot(gs[1, 3])
 
     # Plot and annotate timeline at top
-    ax_t.plot_date([wfe_before_dateobs.plot_date, dateobs.plot_date, wfe_after_dateobs.plot_date], [0, 0, 0])
+    ax_t.xaxis.axis_date()
+    ax_t.plot([wfe_before_dateobs.plot_date, dateobs.plot_date, wfe_after_dateobs.plot_date], [0, 0, 0], ls='none', marker='o')
     ax_t.axhline(0, ls=':')
 
     ax_t.xaxis.set_major_locator(matplotlib.dates.DayLocator(interval=1))
@@ -2026,10 +2027,11 @@ def show_wfs_during_program(
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 6), ncols=1, nrows=1)
 
-    ax.plot_date(
+    ax.xaxis.axis_date()
+    ax.plot(
         wfs_dates_array.plot_date, rms_obs, '+', color='C1', ls='-', label='Measured RMS Wavefront Error at NIRCam NRCA3'
     )
-    ax.plot_date(
+    ax.plot(
         wfs_dates_array.plot_date,
         delta_rmses,
         'none',

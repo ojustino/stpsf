@@ -10,6 +10,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,8 +19,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3"
       - run: pip install build
       - run: python -m build --sdist --wheel
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -32,7 +37,8 @@ jobs:
     permissions:
       id-token: write
       attestations: write
-    # Requires environment protection rules in GitHub Settings:
+    # To add required reviewers before deployment,
+    # edit the protection rules in GitHub Settings:
     # Settings > Environments > pypi > Add required reviewers
     environment:
       name: pypi
