@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 name = "stpsf"
 description = "Creates simulated point spread functions for Space Telescopes (James Webb, Roman)"
 authors = [
-    { name = "Association of Universities for Research in Astronomy", email = "help@stsci.edu" },
+    { name = "STPSF developers, at Space Telescope Science Institute and elsewhere" },
 ]
 license-files = ["LICENSE.md"]
 dynamic = [
@@ -27,7 +27,7 @@ dependencies = [
     "poppy>=1.1.2,<1.2.0",
     "pysiaf>=0.11.0,<0.26.0",
     "scipy>=1.14.0,<1.16.0",
-    "synphot>=1.4.0,<1.7.0",
+    "synphot>=1.4.0,<1.8.0",
 ]
 
 [project.optional-dependencies]
