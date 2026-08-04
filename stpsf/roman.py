@@ -123,6 +123,8 @@ class WavelengthDependenceInterpolator(object):
         """Return the Zernike coefficients as interpolated for this
         `wavelength`"""
         # return array of length n_zernikes interpolated for this wavelength
+        _log.info(f"stpsf.roman.WavelengthDependenceInterpolator's wavelength argument: {wavelength}")
+        _log.info(f"stpsf.roman.WavelengthDependenceInterpolator._wavelengths attribute: {self._wavelengths}")
         if wavelength in self._wavelengths:
             # aberration known exactly for this wavelength
             aberration_row_idx = self._wavelengths.index(wavelength)
@@ -189,6 +191,7 @@ class FieldDependentAberration(poppy.ZernikeWFE):
             self.coefficients = wavelength * self.get_aberration_terms(wavelength)
         else:
             self.coefficients = self.get_aberration_terms(wavelength) * u.meter
+        _log.info(f"stpsf.roman.FieldDependentAberration.get_opd's wavelength: {wavelength}")
         return super().get_opd(wave)
 
     @property
@@ -343,6 +346,9 @@ def _load_wfi_detector_aberrations(filename):
                 # local_x and _y range from -20.44 to +20.44, so adding to the midpoint pixel
                 # makes sense to place (-20.44, -20.44) at (4, 4)
                 pixx, pixy = (round(midpoint_pixel - local_x * 1e2), round(midpoint_pixel + local_y * 1e2))
+
+                _log.info(f" --> xpos {local_x}, ypos {local_y}")
+                _log.info(f"det {number:02d}, fp {field_id:02d}/{len(field_points):02d}, ({pixx}, {pixy}) pixels")
 
             detector.add_field_point(pixx, pixy, interpolator)
 
