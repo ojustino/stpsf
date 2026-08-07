@@ -5,11 +5,11 @@ import astropy.convolution
 import numpy as np
 import scipy
 import scipy.signal as signal
+from astropy import units as u
 from astropy.convolution import convolve
 from astropy.convolution.kernels import CustomKernel
 from astropy.io import fits
-from astropy import units as u
-from astropy.modeling.functional_models import Gaussian1D, GAUSSIAN_SIGMA_TO_FWHM
+from astropy.modeling.functional_models import GAUSSIAN_SIGMA_TO_FWHM
 
 import stpsf
 from stpsf import constants, utils
@@ -219,7 +219,7 @@ def apply_detector_ipc(psf_hdulist, extname='DET_DIST'):
         psf_hdulist[extname].header.add_history('Applied detector interpixel capacitance (IPC) model')
 
     else:
-        stpsf.stpsf_core._log.info('IPC model not implemented yet for {}'.format(inst))
+        stpsf.stpsf_core._log.info(f'IPC model not implemented yet for {inst}')
         psf_hdulist[extname].header['IPCINST'] = (inst, 'No IPC correction applied')
 
     return psf_hdulist
@@ -248,7 +248,7 @@ def apply_detector_charge_diffusion(psf_hdulist, options):
     ext = 1  # Apply to the 'OVERDIST' extension
 
     stpsf.stpsf_core._log.info(
-        'Detector charge diffusion: Convolving with Gaussian with sigma={0:.3f} arcsec'.format(sigma)
+        f'Detector charge diffusion: Convolving with Gaussian with sigma={sigma:.3f} arcsec'
     )
     out = scipy.ndimage.gaussian_filter(psf_hdulist[ext].data, sigma / psf_hdulist[0].header['PIXELSCL'])
     psf_hdulist[ext].header.add_history('Applied detector charge diffusion model.')

@@ -122,3 +122,25 @@ omit = [
     "*/stpsf/*/*/tests/*",
     "*/stpsf/version*",
 ]
+
+[tool.ruff]
+line-length = 120          # scientific code with array literals often wants more room than 88
+target-version = "py311"   # match whatever you actually run
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (unused imports, undefined names, etc.)
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade (modernize syntax)
+    "NPY", # numpy-specific rules, if you use numpy
+]
+ignore = [
+    "E501",  # line too long — formatter handles this; don't fight it on data literals
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E402"]  # notebooks often have imports after code cells
+
+[tool.ruff.format]
+quote-style = "double"
