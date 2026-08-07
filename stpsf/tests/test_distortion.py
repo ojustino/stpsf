@@ -1,9 +1,8 @@
-import pytest
 import numpy as np
+import pytest
 from astropy.io import fits
 
-from .. import distortion
-from .. import stpsf_core
+from .. import distortion, stpsf_core
 
 
 def test_apply_distortion_skew():
@@ -167,6 +166,7 @@ def test_distortion_linear_anisotropy():
     See https://github.com/spacetelescope/stpsf/issues/148
     """
     from copy import deepcopy
+
     from scipy.interpolate import interp1d
 
     def gaussian_2d(X, Y, mu, A=1.0, sigma=1.0):
@@ -281,10 +281,10 @@ def test_distortion_pixel_coords_precisely_match_siaf(plot=False):
     assert np.allclose(ynew_idl, y_aper_idl), "Y coordinates used in distort_image ought to precisely match SIAF for this setup."
 
     if plot:
-        import matplotlib, matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
 
         #--- Compute regular grid of pixels relative to the SciRef location
-        cen = (aper_npix-1)/2+1
+        (aper_npix-1)/2+1
         regular_ideal_grid_x = (x_aper_sci - aper.XSciRef) * nrc.pixelscale
         regular_ideal_grid_y = (y_aper_sci - aper.YSciRef) * nrc.pixelscale
 

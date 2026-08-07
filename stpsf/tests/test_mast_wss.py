@@ -1,6 +1,7 @@
 import pytest
-import stpsf
 from astropy.table import Table
+
+import stpsf
 
 
 @pytest.mark.remote_data
@@ -58,4 +59,4 @@ def test_query_wfsc_images(test_download=False):
     assert isinstance(filetable2, Table), "Query should return a table"
 
     if test_download:
-        file_list = download_wfsc_images(1160, 1)
+        stpsf.mast_wss.download_wfsc_images(1160, 1)
