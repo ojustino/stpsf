@@ -224,8 +224,8 @@ def apply_distortion(hdulist_or_filename=None, fill_value=0):
         coeff_keys = np.sort(np.array([c for c in all_keys if 'Idl2Sci' + axis in c]))
         coeff = np.array([getattr(aper, c) for c in coeff_keys[0:number_of_coefficients]])
         for i in range(len(coeff)):
-            key = 'COEF_{}'.format(coeff_keys[i][-3:])
-            psf[ext].header[key] = (coeff[i], 'SIAF distortion coefficient for {}'.format(coeff_keys[i]))
+            key = f'COEF_{coeff_keys[i][-3:]}'
+            psf[ext].header[key] = (coeff[i], f'SIAF distortion coefficient for {coeff_keys[i]}')
 
     return psf
 
@@ -274,9 +274,9 @@ def apply_rotation(hdulist_or_filename=None, rotate_value=None, crop=True):
         aper_name = hdu_list[0].header['APERNAME'].upper()
 
     if instrument in ['MIRI', 'NIRSPEC']:
-        raise ValueError("{}'s rotation is already included in STPSF and " "shouldn't be added again.".format(instrument))
+        raise ValueError(f"{instrument}'s rotation is already included in STPSF and " "shouldn't be added again.")
     if instrument == 'WFI':
-        raise ValueError('Rotation not necessary for {:} as pupil are aligned with detectors (to confirm).'.format(instrument))
+        raise ValueError(f'Rotation not necessary for {instrument} as pupil are aligned with detectors (to confirm).')
 
     # Set rotation value if not already set by a keyword argument
     if rotate_value is None:
