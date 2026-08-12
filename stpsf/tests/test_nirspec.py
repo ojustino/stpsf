@@ -129,9 +129,9 @@ def test_nrs_ifu_broadening():
     fwhm_overdist = stpsf.measure_fwhm(psf, ext='OVERDIST')
     assert fwhm_overdist > fwhm_oversamp, "IFU broadening model should increase the FWHM for the distorted extensions"
 
-    stpsf.measure_fwhm(psf, ext='DET_SAMP')
-    stpsf.measure_fwhm(psf, ext='DET_DIST')
-    assert fwhm_overdist > fwhm_oversamp, "IFU broadening model should increase the FWHM for the distorted extensions"
+    fwhm_detsamp = stpsf.measure_fwhm(psf, ext='DET_SAMP')
+    fwhm_detdist = stpsf.measure_fwhm(psf, ext='DET_DIST')
+    assert fwhm_detdist > fwhm_detsamp, "IFU broadening model should increase the FWHM for the distorted extensions"
 
     # Now test that we can also optionally turn off that effect
     nrs.options['ifu_broadening'] = None

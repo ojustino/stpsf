@@ -656,7 +656,9 @@ def test_get_rms_per_segment():
 
 @pytest.mark.remote_data
 def test_iec_wfe_model():
-    pytest.importorskip('jwst')  # The IEC telemetry retrieval functionality requires the JWST pipeline
+    jwst = pytest.importorskip('jwst')  # The IEC telemetry retrieval functionality requires the JWST pipeline
+                                        # Note that jwst isn't used directly in this function, but *is* used
+                                        # down in the call stack within stpsf.opds.estimate_iec_induced_wfe_at_time
     import astropy.time
     ote = stpsf.opds.OTE_Linear_Model_WSS()
 

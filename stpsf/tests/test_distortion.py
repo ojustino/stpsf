@@ -284,7 +284,6 @@ def test_distortion_pixel_coords_precisely_match_siaf(plot=False):
         import matplotlib.pyplot as plt
 
         #--- Compute regular grid of pixels relative to the SciRef location
-        (aper_npix-1)/2+1
         regular_ideal_grid_x = (x_aper_sci - aper.XSciRef) * nrc.pixelscale
         regular_ideal_grid_y = (y_aper_sci - aper.YSciRef) * nrc.pixelscale
 
