@@ -178,8 +178,7 @@ class CreatePSFLibrary:
         if 'add_distortion' in kwargs and instrument.telescope == 'Roman':
             _log.warn('Note that the add_distortion argument no longer affects '
                       'Roman instrument simulations. All WFI PSFs natively '
-                      'include distortion effects and all RomanCoronagraph '
-                      'PSFs do not.')
+                      'include distortion effects.')
         elif 'add_distortion' not in kwargs and instrument.telescope != 'Roman':
             self.add_distortion = True
             kwargs['add_distortion'] = self.add_distortion
