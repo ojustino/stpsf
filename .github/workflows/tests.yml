@@ -27,7 +27,7 @@ jobs:
     with:
       envs: |
         - name: Check for Sphinx doc build errors
-          linux: py311-docbuild
+          linux: py312-docbuild
   retrieve_cache:
     uses: spacetelescope/stpsf/.github/workflows/retrieve_cache.yml@ee1ced313cc7277f07226f03e64d038f3929d7a3 # setup retrieve_cache with development or latest_release
     with:
