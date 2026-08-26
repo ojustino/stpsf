@@ -126,6 +126,6 @@ from .stpsf_core import (  # noqa
 
 from .opds import enable_adjustable_ote  # noqa
 
-from .roman import WFI, RomanCoronagraph  # noqa
+from .roman import WFI  # noqa
 
 from .match_data import setup_sim_to_match_file  # noqa
