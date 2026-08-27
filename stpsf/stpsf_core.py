@@ -448,8 +448,10 @@ class SpaceTelescopeInstrument(poppy.instrument.Instrument):
             self._extra_keywords.update(pupil_optic.header_keywords())
 
         # add coord transform from entrance pupil to exit pupil
-        # unless ref data are already in exit pupil orientation (like with WFI)
-        if self.name != 'WFI':
+        # (WFI: invert both axes until pupil orientations fixed in source files)
+        if self.name == 'WFI':
+            optsys.add_inversion(axis='both', name='OTE exit pupil', hide=True)
+        else:
             optsys.add_inversion(axis='y', name='OTE exit pupil', hide=True)
 
         # add rotation at this point, if present - needs to be after the

@@ -329,9 +329,10 @@ def _load_wfi_detector_aberrations(filename):
 
         return interpolator
 
-    detector_ids = set(zernike_table['sca'])
+    detector_ids = set(zernike_table[det_col])
     for detid in detector_ids:
-        detectors_dict['WFI{:02}'.format(detid)] = build_detector_from_table(detid, zernike_table)
+        detid = int(detid) # temp to support g/prism Zernike CSVs
+        detectors_dict[f"WFI{detid:02}"] = build_detector_from_table(detid, zernike_table)
 
     return detectors_dict
 
@@ -770,7 +771,8 @@ class WFI(RomanInstrument):
                 # f"{fltr}_25fields_Z210_multiwave.csv"
                 f"{fltr}_25fields_zernike_Z210_multiwavelength.csv"
                 if fltr.startswith('F')
-                else f"{fltr}_5fields_Z45_multiwave.csv")
+                # else f"{fltr}_5fields_Z45_multiwave.csv")
+                else f"{fltr}_5fields_zernike_Z45_multiwavelength.csv")
             for fltr in self.filter_list})
 
         # Load aberration info from ref files
@@ -782,7 +784,7 @@ class WFI(RomanInstrument):
                 self._datapath,
                 'aberrations',
                 # f"{det}_Z210_high_freq_cube.fits"
-                f"SCA{i}_Z210_high_frequency_cube.fits")
+                f"RST_WFI{i}_Z210_high_frequency_map.fits")
             # for det in self.detector_list})
             for i, det in enumerate(self.detector_list, 1)}
         self._pupilopd = self._opd_file_dict['WFI01']
