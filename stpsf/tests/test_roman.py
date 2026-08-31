@@ -290,3 +290,15 @@ def test_WFI_auto_aperturename_and_pixelscale():
 
     aperture = wfi.siaf[wfi.aperturename]
     assert wfi.pixelscale == (aperture.XSciScale + aperture.YSciScale)/2, "Pixel scale should match the SIAF for that aperturename"
+
+
+def test_sci_xy_to_fp():
+    """Test corners match expectations"""
+    corner_data = ( ((0,0), 21),  # lower left
+                    ((0, 4096), 25),  # upper left
+                    ((4096, 0), 1),  # lower right
+                    ((4096, 4096), 5)  # upper right
+                  )
+    for (x, y), fp in corner_data:
+        assert roman._wfi_sci_xy_to_fp(x, y) == fp  # test xy->fp
+        assert roman._wfi_sci_xy_to_fp(*roman._wfi_fp_to_sci_xy(fp)) == fp , f'round trip error for fp {fp}'  # test round trip
