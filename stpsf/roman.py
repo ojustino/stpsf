@@ -846,8 +846,8 @@ class WFI(RomanInstrument):
         if self.detector is None:
             self._pupilopd = value
         else:
-            raise ValueError('pupilopd is set automatically on updates to the '
-                             'detector attribute')
+            raise ValueError('WFI.pupilopd is set automatically on updates to '
+                             'its detector attribute, not manually.')
 
     def _update_pupil(self, wfi_filter=None, detector=None):
         """

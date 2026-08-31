@@ -71,7 +71,7 @@ def test_WFI_fwhm():
     """
     wfi = roman.WFI()
 
-    wfi.pupilopd = None
+    wfi._pupilopd = None
     wfi.options['jitter'] = None
 
     wfi.filter = 'F062'
@@ -251,8 +251,8 @@ def test_WFI_limits_interpolation_range():
 
     # Get min and max valid wavelengths from aberration file
     zern = Table.read(wfi._aberration_files[wfi.mode], format='ascii.csv')
-    min_wv = zern['wavelength'][0] * 1e-6  # convert from micron to meter
-    max_wv = zern['wavelength'][-1] * 1e-6
+    min_wv = zern['wave'][0] * 1e-9  # convert from nm to meter
+    max_wv = zern['wave'][-1] * 1e-9
 
     # Test that get_aberration_terms() uses an approximated wavelength when
     # called with an out-of-bounds wavelength.
