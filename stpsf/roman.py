@@ -222,28 +222,27 @@ class FieldDependentAberration(poppy.ZernikeWFE):
             field_position = tuple(self.field_position)
             coefficients = griddata(np.asarray(field_points), np.asarray(aberration_terms), field_position, method='linear')
             if np.any(np.isnan(coefficients)):
-                # FIND TWO CLOSEST INPUT GRID POINTS:
-                dist = []
-                corners = field_points[1:]  # use only the corner points
-                for i, ip in enumerate(corners):
-                    dist.append(np.sqrt(((ip[0] - field_position[0]) ** 2) + ((ip[1] - field_position[1]) ** 2)))
+                # Find two closest input grid points
+                # [decomposed hypot args are (xdiffs, ydiffs)]
+                dist = np.hypot(*(np.asarray(field_points)
+                                  - np.asarray(field_position)).T)
                 min_dist_indx = np.argsort(dist)[:2]  # keep two closest points
-                # DEFINE LINE B/W TWO POINTS, FIND ORTHOGONAL LINE AT POINT OF INTEREST,
-                # AND FIND INTERSECTION OF THESE TWO LINES.
-                x1, y1 = corners[min_dist_indx[0]]
-                x2, y2 = corners[min_dist_indx[1]]
+                # Define line between two points, then find orthogonal line at
+                # point of interest and intersection of these two lines
+                x1, y1 = field_points[min_dist_indx[0]]
+                x2, y2 = field_points[min_dist_indx[1]]
                 dx = x2 - x1
                 dy = y2 - y1
                 a = (dy * (field_position[1] - y1) + dx * (field_position[0] - x1)) / (dx * dx + dy * dy)
                 closest_interp_point = (x1 + a * dx, y1 + a * dy)
-                # INTERPOLATE ABERRATIONS TO CLOSEST INTERPOLATED POINT:
+                # Interpolate aberrations to closest interpolated point
                 coefficients = griddata(
                     np.asarray(field_points), np.asarray(aberration_terms), closest_interp_point, method='linear'
                 )
-                # IF CLOSEST INTERPOLATED POINT IS STILL OUTSIDE THE INPUT GRID,
-                # THEN USE NEAREST GRID POINT INSTEAD:
+                # If closest interpolatd point is still outside the input grid,
+                # use nearest grid point instead
                 if np.any(np.isnan(coefficients)):
-                    coefficients = aberration_terms[min_dist_indx[0] + 1]
+                    coefficients = aberration_terms[min_dist_indx[0]]
                     _log.warn(
                         'Attempted to get aberrations at field point {} which is outside the range '
                         'of the reference data; approximating to nearest input grid point'.format(field_position)
